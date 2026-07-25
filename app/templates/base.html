@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl" data-theme="light">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}{{ app_settings.get("company_name", "صيدلي ERP") }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -9,7 +9,8 @@
 {% if current_user %}
 <div class="app-shell">
   <div class="app-menu-backdrop" id="appMenuBackdrop" aria-hidden="true"></div>
-  <aside class="sidebar" id="sidebar">
+  <aside class="sidebar" id="sidebar" aria-label="القائمة الرئيسية">
+    <button class="sidebar-close" id="sidebarClose" type="button" aria-label="إغلاق القائمة">×</button>
     <div class="brand"><div class="brand-mark">Rx</div><div><strong>{{ app_settings.get("company_name", "صيدلي ERP") }}</strong><small>{{ app_settings.get("system_subtitle", "الإدارة المالية") }} · {{ app_settings.get("system_version", "5.0.0-dev") }}</small></div></div>
     <nav>
       {% if has_permission('view_dashboard') %}<a href="{{ url_for('dashboard') }}">⌂ <span>مركز القيادة</span></a>{% endif %}
@@ -32,7 +33,7 @@
     <div class="sidebar-user"><strong>{{ current_user.full_name }}</strong><small>{{ 'مدير النظام' if current_user.role=='admin' else 'مستخدم' }}</small><a href="{{ url_for('logout') }}">تسجيل الخروج</a></div>
   </aside>
   <section class="main-area">
-    <header class="topbar"><button class="icon-btn app-menu-toggle" id="appMenuToggle" type="button" title="القائمة الرئيسية (F12)" aria-label="فتح القائمة الرئيسية" aria-expanded="false">☰</button><div class="top-title">{{ app_settings.get("company_name", "نظام الإدارة المالية للصيدليات") }}</div><form class="global-search" method="get" action="{{ url_for('global_search') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="search" name="q" value="{{ request.args.get('q', '') if request.endpoint == 'global_search' else '' }}" placeholder="ابحث عن مورد، مستخدم، موظف أو عملية مالية..." minlength="2" required><button type="submit" title="بحث">⌕</button></form><div class="top-actions"><details class="notification-menu"><summary class="icon-btn bell-btn" title="الإشعارات">🔔{% if unread_notification_count %}<span class="bell-count">{{ unread_notification_count }}</span>{% endif %}</summary><div class="notification-dropdown"><div class="notification-head"><strong>الإشعارات</strong><form method="post" action="{{ url_for('notifications_read_all') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="link-btn">تحديد الكل كمقروء</button></form></div>{% for n in top_notifications %}<a class="notification-item {{ 'unread' if not n.is_read else '' }}" href="{{ url_for('open_notification', notification_id=n.id) }}"><strong>{{ n.title }}</strong><span>{{ n.message }}</span><small>{{ n.created_at }}</small></a>{% else %}<div class="empty-note">لا توجد إشعارات.</div>{% endfor %}<a class="all-link" href="{{ url_for('notifications_page') }}">عرض كل الإشعارات</a></div></details><a class="icon-btn task-btn" href="{{ url_for('tasks_page') }}" title="المهام">☑{% if open_task_count %}<span class="bell-count">{{ open_task_count }}</span>{% endif %}</a><button class="icon-btn" id="themeToggle" title="الوضع الليلي">◐</button></div></header>
+    <header class="topbar"><button class="icon-btn app-menu-toggle" id="appMenuToggle" type="button" title="القائمة الرئيسية (F12)" aria-label="فتح القائمة الرئيسية" aria-expanded="false">☰</button><div class="top-title">{{ app_settings.get("company_name", "نظام الإدارة المالية للصيدليات") }}</div><button class="icon-btn mobile-search-toggle" id="mobileSearchToggle" type="button" aria-label="فتح البحث">⌕</button><form class="global-search" id="globalSearchForm" method="get" action="{{ url_for('global_search') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="search" name="q" value="{{ request.args.get('q', '') if request.endpoint == 'global_search' else '' }}" placeholder="ابحث في النظام..." minlength="2" required><button type="submit" title="بحث">⌕</button></form><div class="top-actions"><details class="notification-menu"><summary class="icon-btn bell-btn" title="الإشعارات">🔔{% if unread_notification_count %}<span class="bell-count">{{ unread_notification_count }}</span>{% endif %}</summary><div class="notification-dropdown"><div class="notification-head"><strong>الإشعارات</strong><form method="post" action="{{ url_for('notifications_read_all') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="link-btn">تحديد الكل كمقروء</button></form></div>{% for n in top_notifications %}<a class="notification-item {{ 'unread' if not n.is_read else '' }}" href="{{ url_for('open_notification', notification_id=n.id) }}"><strong>{{ n.title }}</strong><span>{{ n.message }}</span><small>{{ n.created_at }}</small></a>{% else %}<div class="empty-note">لا توجد إشعارات.</div>{% endfor %}<a class="all-link" href="{{ url_for('notifications_page') }}">عرض كل الإشعارات</a></div></details><a class="icon-btn task-btn" href="{{ url_for('tasks_page') }}" title="المهام">☑{% if open_task_count %}<span class="bell-count">{{ open_task_count }}</span>{% endif %}</a><button class="icon-btn" id="themeToggle" title="الوضع الليلي">◐</button></div></header>
     <main class="container">
       {% for category, message in get_flashed_messages(with_categories=true) %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}
       {% block content %}{% endblock %}
@@ -54,6 +55,9 @@ const appFocus=document.body.classList.contains('app-focus-mode');
 const appSidebar=document.getElementById('sidebar');
 const appBackdrop=document.getElementById('appMenuBackdrop');
 const appMenuToggle=document.getElementById('appMenuToggle');
+const sidebarClose=document.getElementById('sidebarClose');
+const mobileSearchToggle=document.getElementById('mobileSearchToggle');
+const globalSearchForm=document.getElementById('globalSearchForm');
 function setAppMenu(open){
   if(!appFocus||!appSidebar)return;
   document.body.classList.toggle('app-menu-open',open);
@@ -73,7 +77,25 @@ if(appFocus){
     }
   },true);
   if(appBackdrop)appBackdrop.addEventListener('click',()=>setAppMenu(false));
+  if(sidebarClose)sidebarClose.addEventListener('click',()=>setAppMenu(false));
   appSidebar.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>setAppMenu(false)));
 }
+
+if(mobileSearchToggle&&globalSearchForm){
+  mobileSearchToggle.addEventListener('click',()=>{
+    const open=globalSearchForm.classList.toggle('mobile-open');
+    mobileSearchToggle.setAttribute('aria-expanded',open?'true':'false');
+    if(open){const field=globalSearchForm.querySelector('input[type=search]');if(field)setTimeout(()=>field.focus(),50)}
+  });
+}
+// Ensure legacy pages with bare tables remain usable on narrow screens.
+document.querySelectorAll('main.container table').forEach(table=>{
+  if(!table.closest('.table-wrap')){
+    const wrap=document.createElement('div');
+    wrap.className='table-wrap auto-table-wrap';
+    table.parentNode.insertBefore(wrap,table);
+    wrap.appendChild(table);
+  }
+});
 </script>
 </body></html>

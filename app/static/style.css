@@ -122,3 +122,104 @@ body.app-focus-mode.app-menu-open{overflow:hidden}
 @media(max-width:900px){.analytics-main-grid{grid-template-columns:1fr}.analytics-detail-grid{grid-template-columns:1fr}.period-comparison-panel{grid-column:auto}.payment-breakdown-body{justify-content:center}.analytics-period-label{width:100%;margin:0}}
 @media(max-width:620px){.analytics-kpi-grid{grid-template-columns:1fr 1fr}.analytics-filter{display:grid;grid-template-columns:1fr 1fr}.analytics-quick-periods,.analytics-period-label{grid-column:1/-1}.analytics-filter label,.analytics-filter input,.analytics-filter select{width:100%;min-width:0}.payment-breakdown-body{display:grid}.payment-breakdown-body canvas{margin:auto}.compact-row{grid-template-columns:1.5fr .55fr .8fr;font-size:.78rem}}
 @media(max-width:420px){.analytics-kpi-grid{grid-template-columns:1fr}.analytics-filter{grid-template-columns:1fr}.analytics-quick-periods{display:grid;grid-template-columns:1fr 1fr}}
+
+
+/* v6.3.1 — Mobile-first shell, navigation and universal responsive layer */
+html{overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{min-width:0;overflow-x:hidden}
+img,svg,video,canvas{max-width:100%;height:auto}
+button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+button,.btn,.button-link,.icon-btn{touch-action:manipulation}
+.sidebar{overflow:hidden}
+.sidebar nav{overflow-y:auto;overscroll-behavior:contain;padding-bottom:18px;scrollbar-width:thin}
+.sidebar-close{display:none;position:absolute;top:12px;left:12px;width:40px;height:40px;padding:0;border-radius:12px;background:#ffffff14;color:#fff;font-size:1.65rem;line-height:1;z-index:2}
+.mobile-search-toggle{display:none}
+.top-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.global-search{display:flex;align-items:center;min-width:220px;max-width:560px;flex:1}
+.global-search input{width:100%;min-width:0;border-start-end-radius:0;border-end-end-radius:0}
+.global-search button{flex:0 0 44px;border-start-start-radius:0;border-end-start-radius:0}
+.notification-dropdown{max-width:min(380px,calc(100vw - 24px))}
+.container,.main-area,.panel,.card,.table-wrap{min-width:0}
+.auto-table-wrap{margin-block:12px}
+.table-wrap{-webkit-overflow-scrolling:touch;overscroll-behavior-inline:contain}
+.table-wrap:focus-within{outline:2px solid color-mix(in srgb,var(--primary) 35%,transparent);outline-offset:2px}
+table{max-width:none}
+input,select,textarea{max-width:100%}
+textarea{resize:vertical}
+.actions>*{max-width:100%}
+
+@media(max-width:900px){
+  body.app-focus-mode .sidebar{width:min(86vw,320px);transform:translateX(105%);right:0;padding:18px 14px max(18px,env(safe-area-inset-bottom));}
+  body.app-focus-mode.app-menu-open .sidebar{transform:translateX(0)}
+  .sidebar-close{display:grid;place-items:center}
+  .brand{padding-left:48px;padding-bottom:16px}
+  .brand-mark{width:40px;height:40px;border-radius:11px}
+  .sidebar nav{margin-top:14px;gap:4px}
+  .sidebar nav a{min-height:46px;padding:10px 12px}
+  .topbar{height:auto;min-height:62px;padding:8px max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left));gap:8px;flex-wrap:wrap}
+  .top-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .icon-btn{width:42px;height:42px;min-width:42px}
+  .mobile-search-toggle{display:inline-grid;place-items:center}
+  .global-search{display:none;order:10;flex-basis:100%;max-width:none;width:100%;padding-top:2px}
+  .global-search.mobile-open{display:flex}
+  body.app-focus-mode .container{margin:16px 12px;padding-bottom:max(18px,env(safe-area-inset-bottom));min-height:0}
+  .page-head,.page-heading,.section-title,.panel-head{gap:10px;flex-wrap:wrap}
+  .page-head>*,.page-heading>*,.section-title>*,.panel-head>*{min-width:0}
+  .grid-form,.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:640px){
+  :root{font-size:15px}
+  body.app-focus-mode .container{margin:12px 8px}
+  .topbar{position:sticky;top:0}
+  .top-title{font-size:.88rem}
+  .top-actions{gap:5px}
+  .top-actions .icon-btn{width:40px;height:40px;min-width:40px}
+  .notification-dropdown{position:fixed!important;top:68px!important;right:8px!important;left:8px!important;width:auto!important;max-height:calc(100vh - 84px);overflow:auto}
+  .page-head,.page-heading{display:grid;grid-template-columns:1fr;margin-bottom:14px}
+  .page-head h1,.page-heading h1{font-size:1.35rem;line-height:1.35}
+  .page-head .badge,.page-heading .version-chip,.page-heading .health-overall{justify-self:start}
+  .panel,.card{border-radius:14px}
+  .panel{padding:15px}
+  .card{padding:16px}
+  .cards,.stats{grid-template-columns:1fr 1fr!important;gap:10px}
+  .grid-form,.form-grid,.grid-2,.report-grid{grid-template-columns:1fr!important;gap:11px}
+  .wide,.form-grid .full{grid-column:auto!important}
+  label{gap:6px}
+  input,select,textarea,button,.btn,.button-link{min-height:44px}
+  input,select,textarea{width:100%}
+  .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}
+  .actions>a,.actions>button,.actions>form,.actions>form button{width:100%;text-align:center}
+  .actions>form{display:block}
+  .filter-bar,.period-filter,.dashboard-period,.analytics-filter{display:grid!important;grid-template-columns:1fr!important;align-items:stretch!important;gap:10px}
+  .filter-bar>*,.period-filter>*,.dashboard-period>*,.analytics-filter>*{min-width:0!important;width:100%!important;grid-column:auto!important}
+  .period-buttons,.period-links,.analytics-quick-periods{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));width:100%}
+  .period-btn,.period-links a,.analytics-period-btn{text-align:center}
+  .table-wrap{width:100%;border-radius:13px;position:relative}
+  table{min-width:680px;font-size:.88rem}
+  th,td{padding:10px 9px;white-space:nowrap}
+  .table-wrap::after{content:'اسحب لعرض بقية الجدول ←';display:block;position:sticky;right:0;bottom:0;width:max-content;max-width:100%;padding:5px 9px;margin:4px;background:color-mix(in srgb,var(--primary) 12%,var(--panel));color:var(--muted);border-radius:8px;font-size:.72rem;pointer-events:none}
+  .dashboard-grid,.main-dashboard-grid,.dashboard-pro-grid,.manager-work-grid,.analytics-main-grid,.analytics-detail-grid{grid-template-columns:1fr!important}
+  .erp-stat-grid,.finance-kpi-grid,.manager-stat-grid,.analytics-kpi-grid,.employee-summary-grid,.health-page-grid{grid-template-columns:1fr 1fr!important}
+  .quick-action-grid{grid-template-columns:1fr 1fr!important}
+  .chart-row{grid-template-columns:1fr!important}
+  .activity>div{grid-template-columns:1fr!important}
+  .login-card{margin:24px auto;padding:20px 16px}
+}
+
+@media(max-width:430px){
+  :root{font-size:14px}
+  .brand strong{font-size:.93rem}.brand small{font-size:.72rem}
+  .top-title{max-width:42vw}
+  .cards,.stats,.erp-stat-grid,.finance-kpi-grid,.manager-stat-grid,.analytics-kpi-grid,.employee-summary-grid,.health-page-grid,.quick-action-grid{grid-template-columns:1fr!important}
+  .actions{grid-template-columns:1fr}
+  .period-buttons,.period-links,.analytics-quick-periods{grid-template-columns:1fr 1fr!important}
+  .panel{padding:13px}
+  .card{padding:14px}
+  .card b,.erp-stat-card strong,.finance-kpi strong{font-size:1.3rem}
+}
+
+@media(hover:none) and (pointer:coarse){
+  .sidebar nav a,.notification-item,.quick-action-grid a{min-height:48px}
+  button,.btn,.button-link,.actions a{min-height:46px}
+}
