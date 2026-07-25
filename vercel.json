@@ -1,8 +1,15 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "app.py": {
-      "excludeFiles": "{tests/**,**/test_*.py,**/__pycache__/**,*.db,*.zip,*.json,*.md,*.ps1,*.bat,*.sh}"
+  "version": 2,
+  "builds": [
+    {
+      "src": "wsgi.py",
+      "use": "@vercel/python"
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "wsgi.py"
+    }
+  ]
 }
