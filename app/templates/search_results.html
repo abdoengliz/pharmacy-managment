@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}البحث الذكي{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>البحث الذكي</h1><p>{% if query %}نتائج البحث عن: <strong>{{ query }}</strong>{% else %}اكتب كلمتين على الأقل في مربع البحث.{% endif %}</p></div><span class="badge">{{ results|length }} نتيجة</span></div>
+{% if query and results %}
+  {% set ns = namespace(group='') %}
+  <div class="search-results">
+  {% for item in results %}
+    {% if item.group != ns.group %}
+      {% if not loop.first %}</div>{% endif %}
+      <h2 class="search-group-title">{{ item.group }}</h2><div class="search-group">
+      {% set ns.group = item.group %}
+    {% endif %}
+    <a class="search-result-card" href="{{ item.url }}"><div><strong>{{ item.title }}</strong><span>{{ item.subtitle }}</span></div><b>فتح ←</b></a>
+    {% if loop.last %}</div>{% endif %}
+  {% endfor %}
+  </div>
+{% elif query %}
+  <div class="panel empty-search"><strong>لم نعثر على نتائج.</strong><p>جرّب اسم المورد، اسم المستخدم، رقم الفاتورة، رقم العملية أو جزءًا من الملاحظات.</p></div>
+{% endif %}
+{% endblock %}

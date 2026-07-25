@@ -1,0 +1,1065 @@
+{
+  "stage": "4.7",
+  "baseline": "4.6",
+  "focus": "regression and production-readiness audit",
+  "result": "PASS",
+  "validation": {
+    "python_compileall": "passed",
+    "runtime_sqlite_markers_excluding_db_compat": {
+      "AUTOINCREMENT": 0,
+      "PRAGMA": 0,
+      "sqlite_master": 0,
+      "INSERT OR IGNORE": 0,
+      "GROUP_CONCAT": 0,
+      "lastrowid": 0
+    },
+    "route_count": 124,
+    "missing_critical_routes": [],
+    "static_template_references": 68,
+    "missing_templates": {},
+    "security_and_transaction_controls": {
+      "csrf_protection": true,
+      "secure_session_cookie_config": true,
+      "http_only_session_cookie": true,
+      "security_headers": true,
+      "production_secret_validation": true,
+      "atomic_helper": true,
+      "request_exception_rollback": true,
+      "audit_supports_deferred_commit": true,
+      "critical_routes_use_deferred_audit": true
+    }
+  },
+  "routes": [
+    {
+      "path": "/",
+      "endpoint": "dashboard",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:249"
+    },
+    {
+      "path": "/api/products/search",
+      "endpoint": "product_search_api",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4454"
+    },
+    {
+      "path": "/approval-definitions",
+      "endpoint": "approval_definitions_page",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4142"
+    },
+    {
+      "path": "/approvals",
+      "endpoint": "approvals_center",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4061"
+    },
+    {
+      "path": "/approvals/<int:request_id>",
+      "endpoint": "approval_detail",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4085"
+    },
+    {
+      "path": "/approvals/<int:request_id>/decide",
+      "endpoint": "decide_approval",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:4107"
+    },
+    {
+      "path": "/attendance-portal",
+      "endpoint": "attendance_portal",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:150"
+    },
+    {
+      "path": "/audit",
+      "endpoint": "audit_page",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:2696"
+    },
+    {
+      "path": "/backup/create",
+      "endpoint": "create_backup",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2983"
+    },
+    {
+      "path": "/backup/download/<path:filename>",
+      "endpoint": "download_backup",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:3000"
+    },
+    {
+      "path": "/cashbox",
+      "endpoint": "cashbox",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:662"
+    },
+    {
+      "path": "/change-initial-password",
+      "endpoint": "change_initial_password",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:125"
+    },
+    {
+      "path": "/code-generator",
+      "endpoint": "code_generator",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2683"
+    },
+    {
+      "path": "/customers",
+      "endpoint": "customers_page",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:4434"
+    },
+    {
+      "path": "/dashboard/notes/<int:note_id>/delete",
+      "endpoint": "dashboard_delete_note",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3162"
+    },
+    {
+      "path": "/dashboard/notes/<int:note_id>/update",
+      "endpoint": "dashboard_update_note",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3149"
+    },
+    {
+      "path": "/dashboard/notes/add",
+      "endpoint": "dashboard_add_note",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3135"
+    },
+    {
+      "path": "/dashboard/tasks/<int:task_id>/delete",
+      "endpoint": "dashboard_delete_task",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3121"
+    },
+    {
+      "path": "/dashboard/tasks/<int:task_id>/toggle",
+      "endpoint": "dashboard_toggle_task",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3103"
+    },
+    {
+      "path": "/dashboard/tasks/add",
+      "endpoint": "dashboard_add_task",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3073"
+    },
+    {
+      "path": "/day-closing",
+      "endpoint": "day_closing",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:618"
+    },
+    {
+      "path": "/departments",
+      "endpoint": "departments_page",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2633"
+    },
+    {
+      "path": "/departments/<int:department_id>/toggle",
+      "endpoint": "toggle_department",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2649"
+    },
+    {
+      "path": "/employees",
+      "endpoint": "employees",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2052"
+    },
+    {
+      "path": "/employees/<int:employee_id>",
+      "endpoint": "employee_detail",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:2167"
+    },
+    {
+      "path": "/employees/<int:employee_id>/adjustments",
+      "endpoint": "add_employee_adjustment",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2280"
+    },
+    {
+      "path": "/employees/<int:employee_id>/attendance",
+      "endpoint": "add_employee_attendance",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2228"
+    },
+    {
+      "path": "/employees/<int:employee_id>/edit",
+      "endpoint": "edit_employee",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2351"
+    },
+    {
+      "path": "/employees/<int:employee_id>/leaves",
+      "endpoint": "add_employee_leave",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2258"
+    },
+    {
+      "path": "/employees/<int:employee_id>/payroll",
+      "endpoint": "generate_employee_payroll",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2303"
+    },
+    {
+      "path": "/employees/<int:employee_id>/toggle",
+      "endpoint": "toggle_employee",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2415"
+    },
+    {
+      "path": "/employees/payroll/<int:payroll_id>/paid",
+      "endpoint": "mark_employee_payroll_paid",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2335"
+    },
+    {
+      "path": "/errors",
+      "endpoint": "error_center_page",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:2719"
+    },
+    {
+      "path": "/errors/<int:error_id>/resolve",
+      "endpoint": "resolve_error",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2727"
+    },
+    {
+      "path": "/events",
+      "endpoint": "event_history_page",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:2710"
+    },
+    {
+      "path": "/expenses",
+      "endpoint": "expenses",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1660"
+    },
+    {
+      "path": "/expenses/<int:expense_id>/delete",
+      "endpoint": "delete_expense",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1778"
+    },
+    {
+      "path": "/expenses/<int:expense_id>/edit",
+      "endpoint": "edit_expense",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1717"
+    },
+    {
+      "path": "/external-debts",
+      "endpoint": "external_debts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1799"
+    },
+    {
+      "path": "/external-debts/<int:debt_id>",
+      "endpoint": "external_debt_detail",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1877"
+    },
+    {
+      "path": "/external-debts/<int:debt_id>/delete",
+      "endpoint": "delete_external_debt",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1905"
+    },
+    {
+      "path": "/external-debts/<int:debt_id>/edit",
+      "endpoint": "edit_external_debt",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1851"
+    },
+    {
+      "path": "/financial-accounts",
+      "endpoint": "financial_accounts",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1000"
+    },
+    {
+      "path": "/financial-accounts/<int:account_id>/statement",
+      "endpoint": "account_statement",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:968"
+    },
+    {
+      "path": "/financial-accounts/<int:account_id>/statement/export/<file_format>",
+      "endpoint": "export_account_statement",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:979"
+    },
+    {
+      "path": "/financial-accounts/<int:account_id>/toggle",
+      "endpoint": "toggle_financial_account",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1025"
+    },
+    {
+      "path": "/financial-balances",
+      "endpoint": "financial_balances",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:856"
+    },
+    {
+      "path": "/financial-balances/location/<int:location_id>",
+      "endpoint": "location_financial_balance",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:908"
+    },
+    {
+      "path": "/financial-reports/<report_name>",
+      "endpoint": "financial_reports",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4252"
+    },
+    {
+      "path": "/financial-reports/<report_name>/export/<file_format>",
+      "endpoint": "export_financial_report",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4296"
+    },
+    {
+      "path": "/financial-reports/adjustments",
+      "endpoint": "add_financial_adjustment",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:4269"
+    },
+    {
+      "path": "/financial-reports/adjustments/<int:adjustment_id>/cancel",
+      "endpoint": "cancel_financial_adjustment",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:4286"
+    },
+    {
+      "path": "/inventory",
+      "endpoint": "inventory",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:3258"
+    },
+    {
+      "path": "/invoice-transfers",
+      "endpoint": "invoice_transfers",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:3572"
+    },
+    {
+      "path": "/invoice-transfers/<int:transfer_id>",
+      "endpoint": "invoice_transfer_detail",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:3606"
+    },
+    {
+      "path": "/invoice-transfers/<int:transfer_id>/cancel",
+      "endpoint": "cancel_invoice_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3655"
+    },
+    {
+      "path": "/invoice-transfers/<int:transfer_id>/receive",
+      "endpoint": "receive_invoice_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3639"
+    },
+    {
+      "path": "/invoice-transfers/<int:transfer_id>/send",
+      "endpoint": "send_invoice_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3621"
+    },
+    {
+      "path": "/jobs",
+      "endpoint": "jobs_page",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2657"
+    },
+    {
+      "path": "/jobs/<int:job_id>/toggle",
+      "endpoint": "toggle_job",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2675"
+    },
+    {
+      "path": "/locations",
+      "endpoint": "locations",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1968"
+    },
+    {
+      "path": "/login",
+      "endpoint": "login",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:98"
+    },
+    {
+      "path": "/logout",
+      "endpoint": "logout",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:239"
+    },
+    {
+      "path": "/notifications",
+      "endpoint": "notifications_page",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:3012"
+    },
+    {
+      "path": "/notifications/<int:notification_id>/open",
+      "endpoint": "open_notification",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:3030"
+    },
+    {
+      "path": "/notifications/read-all",
+      "endpoint": "notifications_read_all",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3019"
+    },
+    {
+      "path": "/payments",
+      "endpoint": "payments",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1376"
+    },
+    {
+      "path": "/payments/<int:payment_id>/delete",
+      "endpoint": "delete_payment",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1637"
+    },
+    {
+      "path": "/payments/<int:payment_id>/edit",
+      "endpoint": "edit_payment",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1574"
+    },
+    {
+      "path": "/products/<int:product_id>/toggle",
+      "endpoint": "toggle_product",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3332"
+    },
+    {
+      "path": "/reports",
+      "endpoint": "reports",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:2744"
+    },
+    {
+      "path": "/reports/export/<report_type>/<file_format>",
+      "endpoint": "export_report",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:2879"
+    },
+    {
+      "path": "/revenues",
+      "endpoint": "revenues",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:760"
+    },
+    {
+      "path": "/revenues/<int:revenue_id>/delete",
+      "endpoint": "delete_revenue",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1498"
+    },
+    {
+      "path": "/revenues/<int:revenue_id>/edit",
+      "endpoint": "edit_revenue",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1428"
+    },
+    {
+      "path": "/roles",
+      "endpoint": "roles_page",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2569"
+    },
+    {
+      "path": "/roles/<int:role_id>/clone",
+      "endpoint": "clone_role",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:2609"
+    },
+    {
+      "path": "/roles/<int:role_id>/edit",
+      "endpoint": "edit_role",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2592"
+    },
+    {
+      "path": "/sales-invoices",
+      "endpoint": "sales_invoices_page",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:4489"
+    },
+    {
+      "path": "/sales-invoices/<int:invoice_id>",
+      "endpoint": "sales_invoice_detail",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4521"
+    },
+    {
+      "path": "/search",
+      "endpoint": "global_search",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:3171"
+    },
+    {
+      "path": "/settings",
+      "endpoint": "settings_page",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2921"
+    },
+    {
+      "path": "/stock-transfers",
+      "endpoint": "stock_transfers",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:3356"
+    },
+    {
+      "path": "/stock-transfers/<int:transfer_id>",
+      "endpoint": "stock_transfer_detail",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:3443"
+    },
+    {
+      "path": "/stock-transfers/<int:transfer_id>/cancel",
+      "endpoint": "cancel_stock_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3556"
+    },
+    {
+      "path": "/stock-transfers/<int:transfer_id>/receive",
+      "endpoint": "receive_stock_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3517"
+    },
+    {
+      "path": "/stock-transfers/<int:transfer_id>/send",
+      "endpoint": "send_stock_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3474"
+    },
+    {
+      "path": "/supplier-accounts/<int:account_id>/opening-balance",
+      "endpoint": "update_supplier_opening_balance",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1342"
+    },
+    {
+      "path": "/supplier-invoices/<int:invoice_id>/delete",
+      "endpoint": "delete_supplier_invoice",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1235"
+    },
+    {
+      "path": "/supplier-invoices/<int:invoice_id>/edit",
+      "endpoint": "edit_supplier_invoice",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1206"
+    },
+    {
+      "path": "/suppliers",
+      "endpoint": "suppliers",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1034"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>",
+      "endpoint": "supplier_detail",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:1137"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>/accounts",
+      "endpoint": "add_supplier_account",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1123"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>/archive",
+      "endpoint": "archive_supplier",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1288"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>/communications",
+      "endpoint": "add_supplier_communication",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1301"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>/delete",
+      "endpoint": "delete_supplier",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1550"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>/direct-payment",
+      "endpoint": "supplier_direct_payment",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1256"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>/edit",
+      "endpoint": "edit_supplier",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:1522"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>/invoices",
+      "endpoint": "add_supplier_invoice",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1180"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>/merge",
+      "endpoint": "merge_supplier",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1312"
+    },
+    {
+      "path": "/suppliers/<int:supplier_id>/statement",
+      "endpoint": "supplier_statement",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:1354"
+    },
+    {
+      "path": "/system-health",
+      "endpoint": "system_health",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:553"
+    },
+    {
+      "path": "/system-management",
+      "endpoint": "system_management",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:2549"
+    },
+    {
+      "path": "/system-policies",
+      "endpoint": "system_policies_page",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:4374"
+    },
+    {
+      "path": "/system-version",
+      "endpoint": "system_version",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4308"
+    },
+    {
+      "path": "/tasks",
+      "endpoint": "tasks_page",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:3048"
+    },
+    {
+      "path": "/tasks/<int:task_id>/complete",
+      "endpoint": "complete_task",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3055"
+    },
+    {
+      "path": "/timeline/<entity_type>/<int:entity_id>",
+      "endpoint": "activity_timeline_page",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:2734"
+    },
+    {
+      "path": "/trash",
+      "endpoint": "trash_page",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:1915"
+    },
+    {
+      "path": "/trash/<int:trash_id>/purge",
+      "endpoint": "purge_trash",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1952"
+    },
+    {
+      "path": "/trash/<int:trash_id>/restore",
+      "endpoint": "restore_trash",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:1927"
+    },
+    {
+      "path": "/treasury-center",
+      "endpoint": "treasury_center",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:3729"
+    },
+    {
+      "path": "/treasury-center/export/<file_format>",
+      "endpoint": "export_treasury_center",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4150"
+    },
+    {
+      "path": "/treasury-transfers",
+      "endpoint": "create_treasury_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3771"
+    },
+    {
+      "path": "/treasury-transfers/<int:transfer_id>",
+      "endpoint": "treasury_transfer_detail",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:3955"
+    },
+    {
+      "path": "/treasury-transfers/<int:transfer_id>/cancel",
+      "endpoint": "cancel_treasury_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:4045"
+    },
+    {
+      "path": "/treasury-transfers/<int:transfer_id>/delete",
+      "endpoint": "delete_treasury_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3917"
+    },
+    {
+      "path": "/treasury-transfers/<int:transfer_id>/edit",
+      "endpoint": "edit_treasury_transfer",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:3814"
+    },
+    {
+      "path": "/treasury-transfers/<int:transfer_id>/receive",
+      "endpoint": "receive_treasury_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:4013"
+    },
+    {
+      "path": "/treasury-transfers/<int:transfer_id>/send",
+      "endpoint": "send_treasury_transfer",
+      "methods": [
+        "POST"
+      ],
+      "source": "app/routes.py:3980"
+    },
+    {
+      "path": "/users",
+      "endpoint": "users",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2432"
+    },
+    {
+      "path": "/users/<int:user_id>/edit",
+      "endpoint": "edit_user",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "source": "app/routes.py:2485"
+    },
+    {
+      "path": "/workflows",
+      "endpoint": "workflows_page",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4318"
+    },
+    {
+      "path": "/workflows/<int:workflow_id>",
+      "endpoint": "workflow_detail",
+      "methods": [
+        "GET"
+      ],
+      "source": "app/routes.py:4333"
+    }
+  ],
+  "limitations": [
+    "This is a deterministic static regression audit and does not replace live Supabase integration tests.",
+    "Financial workflows must still be exercised against a staging database before production deployment."
+  ]
+}

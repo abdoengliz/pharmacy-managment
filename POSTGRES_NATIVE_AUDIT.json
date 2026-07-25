@@ -1,0 +1,792 @@
+{
+  "status": "needs_conversion",
+  "summary": {
+    "lastrowid": 24,
+    "autoincrement": 59,
+    "insert_or_ignore": 15,
+    "pragma": 28,
+    "sqlite_master": 4
+  },
+  "hits": [
+    {
+      "kind": "lastrowid",
+      "file": "app/approvals/service.py",
+      "line": 47,
+      "text": "request_id = int(cur.lastrowid)"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 107,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 112,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 131,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 145,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 158,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 169,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 187,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 196,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 210,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 228,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 243,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 280,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 296,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 311,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 325,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 345,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 354,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 369,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 384,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 401,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 410,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 430,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 451,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 464,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 477,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 498,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 515,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 528,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 540,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 560,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 582,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 597,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 623,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 639,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 662,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 683,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 694,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 707,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 730,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 744,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 764,
+      "text": "db.execute(\"INSERT OR IGNORE INTO branches(name) VALUES(?)\", (name,))"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 766,
+      "text": "revenue_cols = {row[1] for row in db.execute(\"PRAGMA table_info(revenues)\").fetchall()}"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 771,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 787,
+      "text": "branch_cols = {row[1] for row in db.execute(\"PRAGMA table_info(branches)\").fetchall()}"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 794,
+      "text": "db.execute(\"INSERT OR IGNORE INTO branches(name,location_type,code,is_active) VALUES(?,?,?,1)\", (\"المخزن الرئيسي\", \"MAIN_WAREHOUSE\", \"WH-MAIN\"))"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 797,
+      "text": "payment_cols = {row[1] for row in db.execute(\"PRAGMA table_info(supplier_payments)\").fetchall()}"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 805,
+      "text": "db.execute(\"\"\"INSERT OR IGNORE INTO supplier_location_accounts"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 815,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 829,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 836,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 852,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 861,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 872,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 883,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 899,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 911,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 924,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 944,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 956,
+      "text": "user_cols = {row[1] for row in db.execute(\"PRAGMA table_info(users)\").fetchall()}"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 963,
+      "text": "department_cols = {row[1] for row in db.execute(\"PRAGMA table_info(departments)\").fetchall()}"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 966,
+      "text": "employee_cols = {row[1] for row in db.execute(\"PRAGMA table_info(employees)\").fetchall()}"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 996,
+      "text": "branch_cols = {row[1] for row in db.execute(\"PRAGMA table_info(branches)\").fetchall()}"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1013,
+      "text": "db.execute(\"INSERT OR IGNORE INTO roles(name,code,description,is_active,created_at) VALUES(?,?,?,1,?)\", (name,code,description,now()))"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1015,
+      "text": "db.execute(\"INSERT OR IGNORE INTO departments(name,is_active,created_at) VALUES(?,1,?)\", (name,now()))"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1017,
+      "text": "db.execute(\"INSERT OR IGNORE INTO jobs(code,name,is_active,created_at) VALUES(?,?,1,?)\", (code,name,now()))"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1019,
+      "text": "db.execute(\"INSERT OR IGNORE INTO code_sequences(entity_key,label,prefix,padding,next_number,updated_at) VALUES(?,?,?,?,1,?)\",(entity_key,label,prefix,padding,now()))"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1022,
+      "text": "db.execute(\"INSERT OR IGNORE INTO workflow_definitions(code,name,entity_type,description,is_active,created_at) VALUES(?,?,?,?,1,?)\","
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1025,
+      "text": "db.execute(\"\"\"INSERT OR IGNORE INTO approval_definitions"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1034,
+      "text": "db.execute(\"INSERT OR IGNORE INTO workflow_states(workflow_id,code,name,sort_order,is_initial,is_final) VALUES(?,?,?,?,?,?)\",(wf[0],code,name,order_no,is_initial,is_final))"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1036,
+      "text": "db.execute(\"INSERT OR IGNORE INTO workflow_transitions(workflow_id,from_state_code,to_state_code,action_name,required_permission,is_active) VALUES(?,?,?,?,?,1)\",(wf[0],from_code,to_code,action,perm))"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1039,
+      "text": "product_cols = {row[1] for row in db.execute(\"PRAGMA table_info(products)\").fetchall()}"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1047,
+      "text": "audit_cols = {row[1] for row in db.execute(\"PRAGMA table_info(audit_log)\").fetchall()}"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1058,
+      "text": "notification_cols = {row[1] for row in db.execute(\"PRAGMA table_info(notifications)\").fetchall()}"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1062,
+      "text": "task_cols = {row[1] for row in db.execute(\"PRAGMA table_info(tasks)\").fetchall()}"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1068,
+      "text": "supplier_cols = {row[1] for row in db.execute(\"PRAGMA table_info(suppliers)\").fetchall()}"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1079,
+      "text": "supplier_cols = {row[1] for row in db.execute(\"PRAGMA table_info(suppliers)\").fetchall()}"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 1089,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT, supplier_id INTEGER NOT NULL, communication_date TEXT NOT NULL,"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 1096,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT, supplier_id INTEGER NOT NULL,"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1104,
+      "text": "payment_cols = {row[1] for row in db.execute(\"PRAGMA table_info(supplier_payments)\").fetchall()}"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1107,
+      "text": "invoice_cols = {row[1] for row in db.execute(\"PRAGMA table_info(supplier_invoices)\").fetchall()}"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1125,
+      "text": "db.execute(\"INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)\", (key, value))"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1135,
+      "text": "cols = {row[1] for row in db.execute(f\"PRAGMA table_info({table})\").fetchall()}"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 1141,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1162,
+      "text": "expense_cols = {row[1] for row in db.execute(\"PRAGMA table_info(expenses)\").fetchall()}"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 1176,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1198,
+      "text": "db.execute(\"INSERT OR IGNORE INTO financial_accounts(branch_id,name,account_type,is_active,created_at) VALUES(?,?,?,?,?)\","
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/core.py",
+      "line": 1205,
+      "text": "db.execute(\"\"\"INSERT OR IGNORE INTO financial_ledger(transaction_number,branch_id,account_id,transaction_type,direction,amount,transaction_date,reference_type,reference_id,notes,created_by,created_at)"
+    },
+    {
+      "kind": "sqlite_master",
+      "file": "app/core.py",
+      "line": 1210,
+      "text": "ledger_sql = db.execute(\"SELECT sql FROM sqlite_master WHERE type='table' AND name='financial_ledger'\").fetchone()"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/core.py",
+      "line": 1215,
+      "text": "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/core.py",
+      "line": 1251,
+      "text": "user_columns = {row[1] for row in db.execute(\"PRAGMA table_info(users)\").fetchall()}"
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/db_compat.py",
+      "line": 195,
+      "text": "r\"\\bINTEGER\\s+PRIMARY\\s+KEY\\s+AUTOINCREMENT\\b\","
+    },
+    {
+      "kind": "pragma",
+      "file": "app/db_compat.py",
+      "line": 204,
+      "text": "if upper.startswith((\"PRAGMA JOURNAL_MODE\", \"PRAGMA BUSY_TIMEOUT\", \"PRAGMA SYNCHRONOUS\", \"PRAGMA FOREIGN_KEYS\")):"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/db_compat.py",
+      "line": 206,
+      "text": "if upper.startswith(\"PRAGMA QUICK_CHECK\"):"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/db_compat.py",
+      "line": 209,
+      "text": "match = re.match(r\"PRAGMA\\s+table_info\\(([^)]+)\\)\", stripped, flags=re.I)"
+    },
+    {
+      "kind": "sqlite_master",
+      "file": "app/db_compat.py",
+      "line": 224,
+      "text": "if re.search(r\"SELECT\\s+sql\\s+FROM\\s+sqlite_master\", sql, flags=re.I):"
+    },
+    {
+      "kind": "sqlite_master",
+      "file": "app/db_compat.py",
+      "line": 227,
+      "text": "r\"SELECT\\s+1\\s+FROM\\s+sqlite_master\\s+WHERE\\s+type='table'\\s+AND\\s+name=\\?\","
+    },
+    {
+      "kind": "autoincrement",
+      "file": "app/db_compat.py",
+      "line": 267,
+      "text": "r\"\\bINTEGER\\s+PRIMARY\\s+KEY\\s+AUTOINCREMENT\\b\","
+    },
+    {
+      "kind": "pragma",
+      "file": "app/db_compat.py",
+      "line": 313,
+      "text": "db.execute(\"PRAGMA foreign_keys = ON\")"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/db_compat.py",
+      "line": 314,
+      "text": "db.execute(\"PRAGMA journal_mode = WAL\")"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/db_compat.py",
+      "line": 315,
+      "text": "db.execute(\"PRAGMA busy_timeout = 30000\")"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/db_compat.py",
+      "line": 316,
+      "text": "db.execute(\"PRAGMA synchronous = NORMAL\")"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/events/service.py",
+      "line": 35,
+      "text": "event_id = int(cur.lastrowid)"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/notifications/service.py",
+      "line": 28,
+      "text": "return int(cur.lastrowid)"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/report_engine.py",
+      "line": 26,
+      "text": "except ImportError:  # pragma: no cover - dependencies installed from requirements.txt"
+    },
+    {
+      "kind": "sqlite_master",
+      "file": "app/routes.py",
+      "line": 447,
+      "text": "\"SELECT 1 FROM sqlite_master WHERE type='table' AND name=?\", (table_name,)"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/routes.py",
+      "line": 459,
+      "text": "integrity_result = db.execute(\"PRAGMA quick_check\").fetchone()[0]"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 694,
+      "text": "revenue_id = int(cur.lastrowid)"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 969,
+      "text": "supplier_id = cur.lastrowid"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 1094,
+      "text": "db.commit(); audit(\"إضافة فاتورة مورد\",f\"المورد: {supplier_id}، الفاتورة: {invoice_number}، القيمة: {amount}\",entity_type=\"supplier_invoice\",entity_id=cur.lastrowid)"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 1174,
+      "text": "sync_ledger_splits(\"supplier_payments\",cur.lastrowid,branch_id,\"SUPPLIER_PAYMENT\",\"OUT\",amount,payment_date,notes,user[\"id\"],splits)"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 1294,
+      "text": "sync_ledger_splits(\"supplier_payments\",cur.lastrowid,branch_id,\"SUPPLIER_PAYMENT\",\"OUT\",amount,payment_date,notes,user[\"id\"],splits)"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 1588,
+      "text": "sync_ledger_splits(\"expenses\",cur.lastrowid,branch_id,\"EXPENSE\",\"OUT\",amount,request.form[\"expense_date\"],notes,user[\"id\"],splits)"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 1708,
+      "text": "sync_ledger(\"external_debts\",cur.lastrowid,branch_id,account_id,\"EXTERNAL_DEBT\",direction,amount,debt_date,request.form.get(\"notes\",\"\").strip(),user[\"id\"])"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 1709,
+      "text": "db.commit(); audit(\"إضافة دين خارجي\",f\"{cur.lastrowid} - {amount}\"); flash(\"تمت إضافة الدين الخارجي.\",\"success\")"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 1781,
+      "text": "sync_ledger(\"external_debt_payments\",cur.lastrowid,debt[\"branch_id\"],account_id,\"EXTERNAL_DEBT_PAYMENT\",direction,amount,payment_date,request.form.get(\"notes\",\"\").strip(),user[\"id\"])"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 2005,
+      "text": "return redirect(url_for(\"employee_detail\", employee_id=cur.lastrowid))"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 2338,
+      "text": "user_id = cur.lastrowid"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 2464,
+      "text": "if perm in PERMISSIONS: db.execute(\"INSERT INTO role_permissions(role_id,permission) VALUES(?,?)\",(cur.lastrowid,perm))"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 2503,
+      "text": "(cur.lastrowid,role_id))"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 3288,
+      "text": "(cur.lastrowid, product_id, quantity, unit_cost),"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 3291,
+      "text": "audit(\"إنشاء تحويل مخزني\", f\"رقم {cur.lastrowid}\")"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 3469,
+      "text": "return redirect(url_for(\"invoice_transfer_detail\",transfer_id=cur.lastrowid))"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 3682,
+      "text": "db.commit(); audit(\"إنشاء تحويل خزينة\", f\"رقم التحويل: {cur.lastrowid}، القيمة: {amount:.2f}\")"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/routes.py",
+      "line": 3684,
+      "text": "return redirect(url_for(\"treasury_transfer_detail\", transfer_id=cur.lastrowid))"
+    },
+    {
+      "kind": "pragma",
+      "file": "app/routes.py",
+      "line": 4334,
+      "text": "product_cols = {row[1] for row in db.execute(\"PRAGMA table_info(products)\").fetchall()}"
+    },
+    {
+      "kind": "insert_or_ignore",
+      "file": "app/rules/service.py",
+      "line": 47,
+      "text": "\"\"\"INSERT OR IGNORE INTO system_policies"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/sales/service.py",
+      "line": 29,
+      "text": "customer_id = int(cur.lastrowid)"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/sales/service.py",
+      "line": 76,
+      "text": "invoice_id = int(cur.lastrowid)"
+    },
+    {
+      "kind": "lastrowid",
+      "file": "app/tasks/service.py",
+      "line": 30,
+      "text": "return int(cur.lastrowid)"
+    }
+  ]
+}

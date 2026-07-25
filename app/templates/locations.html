@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}إدارة المواقع{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>إدارة المواقع</h1><p>إضافة الفروع والمخازن وتعديل أسمائها وأكوادها.</p></div></div>
+<div class="grid two">
+  <section class="card">
+    <h2>إضافة موقع جديد</h2>
+    <form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="add">
+      <label>اسم الموقع<input name="name" required placeholder="مثال: فرع المدينة"></label>
+      <label>الكود<input name="code" placeholder="مثال: BR-04"></label>
+      <label>نوع الموقع<select name="location_type"><option value="BRANCH">فرع</option><option value="MAIN_WAREHOUSE">مخزن رئيسي</option></select></label>
+      <button class="btn primary" type="submit">إضافة الموقع</button>
+    </form>
+  </section>
+  <section class="card">
+    <h2>ملاحظات</h2>
+    <p>إيقاف الموقع يخفيه من الاستخدام الجديد ويحافظ على كل حركاته القديمة.</p>
+    <p>لا يتم حذف أي فرع أو مخزن مرتبط ببيانات مالية.</p>
+  </section>
+</div>
+<section class="card">
+  <h2>المواقع الحالية</h2>
+  <div class="table-wrap"><table><thead><tr><th>الاسم</th><th>الكود</th><th>النوع</th><th>الحالة</th><th>المستخدمون</th><th>الحسابات</th><th>حسابات الموردين</th><th>الحركات</th><th>الإجراءات</th></tr></thead><tbody>
+  {% for row in rows %}<tr>
+    <td><form id="edit-{{ row.id }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"></form><input form="edit-{{ row.id }}" type="hidden" name="action" value="edit"><input form="edit-{{ row.id }}" type="hidden" name="location_id" value="{{ row.id }}"><input form="edit-{{ row.id }}" name="name" value="{{ row.name }}" required></td>
+    <td><input form="edit-{{ row.id }}" name="code" value="{{ row.code or '' }}" placeholder="كود"></td>
+    <td><select form="edit-{{ row.id }}" name="location_type"><option value="BRANCH" {% if row.location_type=='BRANCH' %}selected{% endif %}>فرع</option><option value="MAIN_WAREHOUSE" {% if row.location_type=='MAIN_WAREHOUSE' %}selected{% endif %}>مخزن رئيسي</option></select></td>
+    <td><span class="badge {{ 'success' if row.is_active else 'muted' }}">{{ 'نشط' if row.is_active else 'موقوف' }}</span></td>
+    <td>{{ row.users_count }}</td><td>{{ row.accounts_count }}</td><td>{{ row.supplier_accounts_count }}</td><td>{{ row.ledger_count }}</td>
+    <td><button form="edit-{{ row.id }}" class="btn small" type="submit">حفظ</button><form method="post" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="toggle"><input type="hidden" name="location_id" value="{{ row.id }}"><button class="btn small {{ 'danger' if row.is_active else 'primary' }}" type="submit">{{ 'إيقاف' if row.is_active else 'تفعيل' }}</button></form></td>
+  </tr>{% else %}<tr><td colspan="9">لا توجد مواقع.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

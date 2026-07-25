@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}صحة النظام{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">System Health</p><h1>صحة النظام</h1><p>فحص قراءة فقط لقاعدة البيانات والخدمات والنسخ الاحتياطية.</p></div>
+  <div class="health-overall {{ 'ok' if overall_ok else 'warn' }}">{{ 'النظام سليم' if overall_ok else 'يحتاج مراجعة' }}</div>
+</div>
+
+<div class="health-page-grid">
+  <section class="panel health-card">
+    <div class="panel-head"><h2>قاعدة البيانات</h2><span class="status-pill {{ 'ok' if database_ok else 'bad' }}">{{ 'سليمة' if database_ok else 'خطأ' }}</span></div>
+    <dl class="health-details">
+      <div><dt>نتيجة Quick Check</dt><dd>{{ integrity_result }}</dd></div>
+      <div><dt>ملف القاعدة</dt><dd>{{ environment_info.database_file }}</dd></div>
+      <div><dt>الحجم</dt><dd>{{ '%.2f'|format(environment_info.database_size_mb) }} MB</dd></div>
+      <div><dt>المساحة الحرة</dt><dd>{{ '%.2f'|format(environment_info.free_disk_gb) }} GB</dd></div>
+      <div><dt>Debug</dt><dd>{{ 'مفعّل' if environment_info.debug else 'متوقف' }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="panel health-card">
+    <div class="panel-head"><h2>الخدمات الأساسية</h2><span>فحص الجداول الداعمة</span></div>
+    <div class="check-list">{% for name, ok in service_checks.items() %}<div><span>{{ name }}</span><b class="{{ 'ok-text' if ok else 'bad-text' }}">{{ 'يعمل' if ok else 'غير جاهز' }}</b></div>{% endfor %}</div>
+  </section>
+
+  <section class="panel health-card">
+    <div class="panel-head"><h2>الكيانات الإدارية</h2><span>إجمالي السجلات الحالية</span></div>
+    <div class="entity-count-grid">{% for name, count in entity_counts.items() %}<div><strong>{{ count }}</strong><span>{{ name }}</span></div>{% endfor %}</div>
+  </section>
+
+  <section class="panel health-card">
+    <div class="panel-head"><h2>الجداول المطلوبة</h2><span>{{ table_checks.values()|select('equalto', true)|list|length }} من {{ table_checks|length }}</span></div>
+    <div class="table-check-grid">{% for name, ok in table_checks.items() %}<span class="{{ 'ok' if ok else 'bad' }}">{{ name }} <b>{{ '✓' if ok else '✕' }}</b></span>{% endfor %}</div>
+  </section>
+</div>
+
+<section class="panel health-card backup-health-card">
+  <div class="panel-head"><div><h2>آخر النسخ الاحتياطية</h2><span>آخر خمسة ملفات داخل مجلد backups</span></div></div>
+  <div class="responsive-table"><table><thead><tr><th>الملف</th><th>الحجم</th><th>آخر تعديل</th></tr></thead><tbody>{% for item in backup_items %}<tr><td>{{ item.name }}</td><td>{{ '%.2f'|format(item.size_mb) }} MB</td><td>{{ item.modified_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>{% else %}<tr><td colspan="3" class="empty">لا توجد نسخ احتياطية.</td></tr>{% endfor %}</tbody></table></div>
+</section>
+<p class="health-checked-at">آخر فحص: {{ checked_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+{% endblock %}

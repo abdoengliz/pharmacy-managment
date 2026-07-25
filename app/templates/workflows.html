@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block title %}مركز سير العمل{% endblock %}{% block content %}
+<div class="page-head"><div><h1>مركز سير العمل</h1><p>تعريف دورات الاعتماد والحالات التي تمر بها مستندات النظام.</p></div></div>
+<div class="panel"><div class="table-wrap"><table><thead><tr><th>الرمز</th><th>الاسم</th><th>نوع السجل</th><th>الحالات</th><th>الانتقالات</th><th>السجلات الجارية</th><th>الحالة</th><th></th></tr></thead><tbody>
+{% for row in rows %}<tr><td><code>{{ row.code }}</code></td><td>{{ row.name }}</td><td>{{ row.entity_type }}</td><td>{{ row.state_count }}</td><td>{{ row.transition_count }}</td><td>{{ row.instance_count }}</td><td><span class="badge {{ 'success' if row.is_active else 'muted' }}">{{ 'نشط' if row.is_active else 'موقوف' }}</span></td><td><a class="button-link" href="{{ url_for('workflow_detail', workflow_id=row.id) }}">التفاصيل</a></td></tr>{% else %}<tr><td colspan="8">لا توجد تعريفات.</td></tr>{% endfor %}
+</tbody></table></div></div>{% endblock %}

@@ -1,0 +1,28 @@
+{
+  "stage": "4.4",
+  "baseline": "4.3",
+  "scope": "app runtime code excluding app/db_compat.py",
+  "generated_at": "2026-07-25T05:23:19",
+  "counts": {
+    "AUTOINCREMENT": 0,
+    "PRAGMA": 0,
+    "sqlite_master": 0,
+    "INSERT OR IGNORE": 0,
+    "GROUP_CONCAT": 0,
+    "lastrowid": 0
+  },
+  "hits": {
+    "AUTOINCREMENT": [],
+    "PRAGMA": [],
+    "sqlite_master": [],
+    "INSERT OR IGNORE": [],
+    "GROUP_CONCAT": [],
+    "lastrowid": []
+  },
+  "changes": [
+    "Removed sqlite_master inspection from app/core.py.",
+    "Added backend-neutral table_has_unique_constraint().",
+    "Moved SQLite lastrowid fallback entirely into app/db_compat.py.",
+    "Application/business code contains no executable SQLite-only constructs from the audited set."
+  ]
+}

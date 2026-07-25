@@ -1,0 +1,66 @@
+{% extends 'base.html' %}{% block title %}المصروفات<script id="account-data" type="application/json">[{% for a in accounts %}{"id":{{a.id}},"branch_id":{{a.branch_id}},"name":{{a.name|tojson}}}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+<script>
+document.querySelectorAll('[data-split-form]').forEach(box => {
+  const form=box.closest('form'), totalInput=form.querySelector('input[name="amount"]'), branchSelect=form.querySelector('select[name="branch_id"]');
+  const rows=box.querySelector('.split-rows');
+  const accountData=JSON.parse(document.getElementById('account-data').textContent);
+  function addRow(value='') {
+    const row=document.createElement('div'); row.className='split-row';
+    row.innerHTML='<select name="split_account_id" required></select><input name="split_amount" type="number" min="0.01" step="0.01" placeholder="المبلغ" value="'+value+'" required><button type="button" class="danger-button remove-split">نقل إلى السلة</button>';
+    rows.appendChild(row); fillAccounts(row.querySelector('select'));
+    row.querySelector('input').addEventListener('input', update); row.querySelector('.remove-split').onclick=()=>{ if(rows.children.length>1){row.remove();update();} };
+  }
+  function fillAccounts(select){ const branch=Number(branchSelect.value); select.innerHTML=accountData.filter(a=>a.branch_id===branch).map(a=>`<option value="${a.id}">${a.name}</option>`).join(''); }
+  function update(){ const total=Number(totalInput.value||0); const used=[...rows.querySelectorAll('input[name="split_amount"]')].reduce((s,i)=>s+Number(i.value||0),0); box.querySelector('.split-total').textContent=used.toFixed(2); box.querySelector('.split-remaining').textContent=(total-used).toFixed(2); }
+  branchSelect.addEventListener('change',()=>rows.querySelectorAll('select').forEach(fillAccounts)); totalInput.addEventListener('input',update);
+  box.querySelector('.add-split').onclick=()=>addRow(); addRow();
+  form.addEventListener('submit',e=>{ const total=Number(totalInput.value||0), used=[...rows.querySelectorAll('input[name="split_amount"]')].reduce((s,i)=>s+Number(i.value||0),0); if(Math.abs(total-used)>0.009){e.preventDefault();alert('مجموع تقسيم الحسابات لازم يساوي قيمة العملية.');} });
+});
+</script>
+{% endblock %}{% block content %}
+<div class="page-head"><div><h1>المصروفات</h1><p>تسجيل مصروفات كل فرع ومتابعة صندوق اليومية.</p></div></div>
+{% if has_permission('add_expense') %}
+<div class="panel"><h2>إضافة مصروف</h2><form method="post" class="grid-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>الفرع<select name="branch_id" required>{% for b in branches %}<option value="{{ b.id }}" {% if current_user.role != 'admin' and current_user.branch_id == b.id %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select></label>
+<label>القيمة<input type="number" name="amount" min="0.01" step="0.01" required></label>
+<label>التاريخ<input type="date" name="expense_date" value="{{ today }}" required></label>
+<label>التصنيف<select name="category" required><option>إيجار</option><option>مرتبات</option><option>كهرباء</option><option>ماء</option><option>إنترنت</option><option>نقل ومواصلات</option><option>مستلزمات</option><option>صيانة</option><option>مصروف آخر</option></select></label>
+<label>التصنيف المالي<select name="financial_classification" class="financial-classification" required>{% for key,label in financial_classifications.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
+<label class="asset-type-field" style="display:none">نوع الأصل<select name="asset_type">{% for key,label in asset_types.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></label>
+<div class="wide split-box" data-split-form>
+<h3>تقسيم المبلغ على الحسابات</h3>
+<div class="split-rows"></div>
+<button type="button" class="secondary add-split">+ إضافة حساب آخر</button>
+<p class="split-summary">المجموع: <strong class="split-total">0.00</strong> — المتبقي: <strong class="split-remaining">0.00</strong></p>
+</div><label class="wide">ملاحظات<input name="notes" placeholder="اختياري"></label><button class="wide">حفظ المصروف</button>
+</form></div>{% endif %}
+<div class="table-wrap"><table><tr><th>التاريخ</th><th>الفرع</th><th>نوع المصروف</th><th>التصنيف المالي</th><th>نوع الأصل</th><th>القيمة</th><th>الحساب المالي</th><th>المستخدم</th><th>ملاحظات</th><th>الإجراءات</th></tr>
+{% for r in rows %}<tr><td>{{ r.expense_date }}</td><td>{{ r.branch_name }}</td><td>{{ r.category }}</td><td>{{ financial_classifications.get(r.financial_classification, r.financial_classification) }}</td><td>{{ asset_types.get(r.asset_type, r.asset_type) if r.asset_type else '-' }}</td><td>{{ '%.2f'|format(r.amount) }}</td><td>{{ r.payment_method }}</td><td>{{ r.creator }}</td><td>{{ r.notes or '-' }}</td><td><div class="actions">{% if has_permission('edit_expense') %}<a href="{{ url_for('edit_expense', expense_id=r.id) }}">تعديل</a>{% endif %}{% if has_permission('delete_expense') %}<form method="post" action="{{ url_for('delete_expense', expense_id=r.id) }}" onsubmit="return confirm('هل تريد حذف المصروف؟')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-button">نقل إلى السلة</button></form>{% endif %}</div></td></tr>{% else %}<tr><td colspan="10" class="empty">لا توجد مصروفات مسجلة.</td></tr>{% endfor %}
+</table></div><script id="account-data" type="application/json">[{% for a in accounts %}{"id":{{a.id}},"branch_id":{{a.branch_id}},"name":{{a.name|tojson}}}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+<script>
+document.querySelectorAll('[data-split-form]').forEach(box => {
+  const form=box.closest('form'), totalInput=form.querySelector('input[name="amount"]'), branchSelect=form.querySelector('select[name="branch_id"]');
+  const rows=box.querySelector('.split-rows');
+  const accountData=JSON.parse(document.getElementById('account-data').textContent);
+  function addRow(value='') {
+    const row=document.createElement('div'); row.className='split-row';
+    row.innerHTML='<select name="split_account_id" required></select><input name="split_amount" type="number" min="0.01" step="0.01" placeholder="المبلغ" value="'+value+'" required><button type="button" class="danger-button remove-split">نقل إلى السلة</button>';
+    rows.appendChild(row); fillAccounts(row.querySelector('select'));
+    row.querySelector('input').addEventListener('input', update); row.querySelector('.remove-split').onclick=()=>{ if(rows.children.length>1){row.remove();update();} };
+  }
+  function fillAccounts(select){ const branch=Number(branchSelect.value); select.innerHTML=accountData.filter(a=>a.branch_id===branch).map(a=>`<option value="${a.id}">${a.name}</option>`).join(''); }
+  function update(){ const total=Number(totalInput.value||0); const used=[...rows.querySelectorAll('input[name="split_amount"]')].reduce((s,i)=>s+Number(i.value||0),0); box.querySelector('.split-total').textContent=used.toFixed(2); box.querySelector('.split-remaining').textContent=(total-used).toFixed(2); }
+  branchSelect.addEventListener('change',()=>rows.querySelectorAll('select').forEach(fillAccounts)); totalInput.addEventListener('input',update);
+  box.querySelector('.add-split').onclick=()=>addRow(); addRow();
+  form.addEventListener('submit',e=>{ const total=Number(totalInput.value||0), used=[...rows.querySelectorAll('input[name="split_amount"]')].reduce((s,i)=>s+Number(i.value||0),0); if(Math.abs(total-used)>0.009){e.preventDefault();alert('مجموع تقسيم الحسابات لازم يساوي قيمة العملية.');} });
+});
+</script>
+{% endblock %}
+
+<script>
+document.querySelectorAll('.financial-classification').forEach(select=>{
+  const field=select.closest('form').querySelector('.asset-type-field');
+  const refresh=()=>{ const show=select.value==='ASSET'; field.style.display=show?'block':'none'; field.querySelector('select').required=show; };
+  select.addEventListener('change',refresh); refresh();
+});
+</script>

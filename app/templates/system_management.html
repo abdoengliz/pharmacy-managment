@@ -1,0 +1,19 @@
+{% extends 'base.html' %}{% block content %}
+<div class="page-head"><div><h1>مركز الإدارة</h1><p>لوحة موحدة لإدارة المستخدمين والهيكل الإداري والصلاحيات ومتابعة النشاط.</p></div></div>
+<div class="stats-grid">
+<div class="stat-card"><span>المستخدمون النشطون</span><strong>{{ stats.users }}</strong><a href="{{ url_for('users') }}">إدارة المستخدمين</a></div>
+<div class="stat-card"><span>الموظفون النشطون</span><strong>{{ stats.employees }}</strong><a href="{{ url_for('employees') }}">إدارة الموظفين</a></div>
+<div class="stat-card"><span>الأدوار النشطة</span><strong>{{ stats.roles }}</strong><a href="{{ url_for('roles_page') }}">الأدوار والصلاحيات</a></div>
+<div class="stat-card"><span>الأقسام النشطة</span><strong>{{ stats.departments }}</strong><a href="{{ url_for('departments_page') }}">إدارة الأقسام</a></div>
+<div class="stat-card"><span>الوظائف النشطة</span><strong>{{ stats.jobs }}</strong><a href="{{ url_for('jobs_page') }}">إدارة الوظائف</a></div>
+<div class="stat-card"><span>الفروع والمواقع</span><strong>{{ stats.branches }}</strong><a href="{{ url_for('locations') }}">إدارة المواقع</a></div>
+<div class="stat-card"><span>اعتمادات معلقة</span><strong>{{ stats.approvals }}</strong><a href="{{ url_for('approvals_center') }}">صندوق الاعتمادات</a></div>
+<div class="stat-card"><span>مهام مفتوحة</span><strong>{{ stats.tasks }}</strong><a href="{{ url_for('tasks_page') }}">المهام</a></div>
+<div class="stat-card"><span>تنبيهات غير مقروءة</span><strong>{{ stats.notifications }}</strong><a href="{{ url_for('notifications_page') }}">التنبيهات</a></div>
+</div>
+<div class="panel"><h2>أدوات الإدارة</h2><div class="quick-actions">
+<a class="button-link" href="{{ url_for('users') }}">المستخدمون</a><a class="button-link" href="{{ url_for('roles_page') }}">الأدوار</a><a class="button-link" href="{{ url_for('employees') }}">الموظفون</a><a class="button-link" href="{{ url_for('departments_page') }}">الأقسام</a><a class="button-link" href="{{ url_for('jobs_page') }}">الوظائف</a><a class="button-link" href="{{ url_for('locations') }}">الفروع</a><a class="button-link" href="{{ url_for('audit_page') }}">سجل التدقيق</a>
+</div></div>
+<div class="panel"><div class="page-head"><div><h2>آخر النشاطات</h2><p>آخر العمليات المسجلة في سجل التدقيق.</p></div><a class="button-link" href="{{ url_for('audit_page') }}">عرض الكل</a></div>
+<div class="table-wrap"><table><tr><th>الوقت</th><th>المستخدم</th><th>العملية</th><th>التفاصيل</th></tr>{% for r in recent_audit %}<tr><td>{{ r.created_at }}</td><td>{{ r.user_name }}</td><td>{{ r.action }}</td><td>{{ r.details or '-' }}</td></tr>{% else %}<tr><td colspan="4">لا توجد نشاطات مسجلة بعد.</td></tr>{% endfor %}</table></div></div>
+{% endblock %}

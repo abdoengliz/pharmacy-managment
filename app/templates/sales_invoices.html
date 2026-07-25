@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% block title %}واجهة المبيعات{% endblock %}
+{% block content %}
+<div class="pos-shell" id="posShell">
+  <div class="pos-title-row">
+    <div><h1>فاتورة بيع جديدة</h1><p>واجهة بيع سريعة تدعم الباركود ولوحة المفاتيح</p></div>
+    <div class="pos-date">{{ today }}</div>
+  </div>
+
+  <form method="post" id="salesForm" autocomplete="off"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <section class="pos-card pos-meta-grid">
+      <label>الفرع
+        <select name="branch_id" id="branchId" required>{% for b in branches %}<option value="{{ b.id }}">{{ b.name }}</option>{% endfor %}</select>
+      </label>
+      <label>العميل
+        <select name="customer_id"><option value="">عميل نقدي</option>{% for c in customers %}<option value="{{ c.id }}">{{ c.customer_no }} - {{ c.name }}</option>{% endfor %}</select>
+      </label>
+      <label>التاريخ<input type="date" name="invoice_date" value="{{ today }}" required></label>
+      <label>طريقة الدفع
+        <select name="payment_method"><option value="CASH">نقدي</option><option value="CARD">بطاقة</option><option value="CREDIT">آجل</option></select>
+      </label>
+    </section>
+
+    <section class="pos-card pos-entry-card">
+      <div class="pos-entry-grid">
+        <label class="pos-smart-field"><span id="searchModeLabel">الرقم التجاري</span>
+          <input id="productSearch" type="text" inputmode="search" autofocus placeholder="امسح الباركود أو اكتب الرقم التجاري" aria-describedby="searchHelp">
+          <div id="productSuggestions" class="pos-suggestions" hidden></div>
+        </label>
+        <label>الكمية<input id="entryQty" type="number" min="0.001" step="0.001" value="1"></label>
+        <label>السعر<input id="entryPrice" type="number" min="0" step="0.01" value="0"></label>
+        <label>الخصم %<input id="entryDiscount" type="number" min="0" max="100" step="0.01" value="0"></label>
+        <label>الضريبة %<input id="entryTax" type="number" min="0" max="100" step="0.01" value="0"></label>
+        <button type="button" class="btn primary pos-add-btn" id="addItemBtn">إضافة الصنف</button>
+      </div>
+      <small id="searchHelp">F1 للتبديل بين الرقم التجاري والاسم التجاري — Enter للإضافة</small>
+    </section>
+
+    <section class="pos-card pos-items-card">
+      <div class="table-wrap"><table id="items" class="pos-items-table">
+        <thead><tr><th>#</th><th>الرقم التجاري</th><th>الاسم التجاري</th><th>الكمية</th><th>السعر</th><th>الخصم %</th><th>الضريبة %</th><th>الإجمالي</th><th>حذف</th></tr></thead>
+        <tbody id="invoiceItems"><tr class="empty-row"><td colspan="9">لم تتم إضافة أصناف بعد</td></tr></tbody>
+      </table></div>
+    </section>
+
+    <section class="pos-card pos-summary-grid">
+      <div class="pos-notes"><label>ملاحظات<textarea name="notes" rows="4" placeholder="أي ملاحظات إضافية..."></textarea></label></div>
+      <div class="pos-totals">
+        <div><span>إجمالي الأصناف</span><strong id="subtotalValue">0.00</strong></div>
+        <div><span>إجمالي الخصم</span><strong id="discountValue">0.00</strong></div>
+        <div><span>إجمالي الضريبة</span><strong id="taxValue">0.00</strong></div>
+        <div class="grand-total"><span>الإجمالي الكلي</span><strong id="totalValue">0.00 د.ل</strong></div>
+      </div>
+    </section>
+
+    <div class="pos-actions">
+      <button type="submit" class="btn primary pos-save">حفظ كمسودة <kbd>F9</kbd></button>
+      <button type="button" class="btn danger" id="clearInvoiceBtn">مسح الفاتورة <kbd>Delete</kbd></button>
+    </div>
+  </form>
+
+  <section class="pos-card pos-history">
+    <h2>المسودات والفواتير السابقة</h2>
+    <div class="table-wrap"><table><thead><tr><th>الرقم</th><th>التاريخ</th><th>العميل</th><th>الفرع</th><th>الحالة</th><th>الإجمالي</th></tr></thead><tbody>
+      {% for i in invoices %}<tr><td><a href="{{ url_for('sales_invoice_detail',invoice_id=i.id) }}">{{ i.invoice_no }}</a></td><td>{{ i.invoice_date }}</td><td>{{ i.customer_name or 'عميل نقدي' }}</td><td>{{ i.branch_name }}</td><td>{{ i.status }}</td><td>{{ '%.2f'|format(i.total_amount) }}</td></tr>{% else %}<tr><td colspan="6">لا توجد فواتير.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const form = document.getElementById('salesForm');
+  const search = document.getElementById('productSearch');
+  const label = document.getElementById('searchModeLabel');
+  const suggestions = document.getElementById('productSuggestions');
+  const tbody = document.getElementById('invoiceItems');
+  const branch = document.getElementById('branchId');
+  const qty = document.getElementById('entryQty');
+  const price = document.getElementById('entryPrice');
+  const discount = document.getElementById('entryDiscount');
+  const tax = document.getElementById('entryTax');
+  let mode = 'barcode', selectedProduct = null, activeIndex = -1, suggestionItems = [];
+
+  const money = n => Number(n || 0).toFixed(2);
+  const focusSearch = () => setTimeout(() => { search.focus(); search.select(); }, 0);
+  const hasItems = () => !!tbody.querySelector('tr[data-item-row]');
+  const setMode = next => {
+    mode = next;
+    selectedProduct = null;
+    search.value = '';
+    suggestions.hidden = true;
+    label.textContent = mode === 'barcode' ? 'الرقم التجاري' : 'الاسم التجاري';
+    search.placeholder = mode === 'barcode' ? 'امسح الباركود أو اكتب الرقم التجاري' : 'اكتب الاسم التجاري للصنف';
+    focusSearch();
+  };
+
+  async function findProducts() {
+    const q = search.value.trim();
+    if (!q) { suggestions.hidden = true; return []; }
+    const url = `{{ url_for('product_search_api') }}?mode=${mode}&q=${encodeURIComponent(q)}&branch_id=${encodeURIComponent(branch.value)}`;
+    const response = await fetch(url, {headers: {'Accept': 'application/json'}});
+    if (!response.ok) throw new Error('تعذر البحث عن الصنف');
+    return (await response.json()).items || [];
+  }
+
+  function renderSuggestions(items) {
+    suggestionItems = items; activeIndex = items.length ? 0 : -1;
+    if (mode !== 'name' || !items.length) { suggestions.hidden = true; return; }
+    suggestions.innerHTML = items.map((p,i) => `<button type="button" class="${i===0?'active':''}" data-index="${i}"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.sku || 'بدون رقم تجاري')} · ${money(p.sale_price)} د.ل</span></button>`).join('');
+    suggestions.hidden = false;
+  }
+
+  function escapeHtml(value) { const div=document.createElement('div'); div.textContent=value??''; return div.innerHTML; }
+  function selectProduct(product) {
+    selectedProduct = product;
+    search.value = mode === 'barcode' ? (product.sku || '') : product.name;
+    price.value = Number(product.sale_price || 0);
+    discount.value = Number(product.discount_percent || 0);
+    tax.value = Number(product.tax_percent || 0);
+    suggestions.hidden = true;
+  }
+
+  function recalc() {
+    let subtotal=0, discounts=0, taxes=0;
+    tbody.querySelectorAll('tr[data-item-row]').forEach(row => {
+      const q=Number(row.querySelector('[name="quantity[]"]').value||0);
+      const p=Number(row.querySelector('[name="unit_price[]"]').value||0);
+      const d=Number(row.querySelector('[name="discount_percent[]"]').value||0);
+      const t=Number(row.querySelector('[name="tax_percent[]"]').value||0);
+      const gross=q*p, disc=gross*d/100, taxable=gross-disc, tx=taxable*t/100, total=taxable+tx;
+      subtotal+=gross; discounts+=disc; taxes+=tx;
+      row.querySelector('.line-total').textContent=money(total);
+    });
+    document.getElementById('subtotalValue').textContent=money(subtotal);
+    document.getElementById('discountValue').textContent=money(discounts);
+    document.getElementById('taxValue').textContent=money(taxes);
+    document.getElementById('totalValue').textContent=money(subtotal-discounts+taxes)+' د.ل';
+    tbody.querySelectorAll('tr[data-item-row]').forEach((row,i)=>row.querySelector('.row-number').textContent=i+1);
+  }
+
+  function addSelectedProduct() {
+    if (!selectedProduct) return;
+    const q=Number(qty.value||0), p=Number(price.value||0), d=Number(discount.value||0), t=Number(tax.value||0);
+    if (q<=0 || p<0 || d<0 || d>100 || t<0 || t>100) { alert('تأكد من بيانات الصنف والكمية والسعر.'); return; }
+    const empty=tbody.querySelector('.empty-row'); if(empty) empty.remove();
+    const row=document.createElement('tr'); row.dataset.itemRow='1';
+    row.innerHTML=`<td class="row-number"></td><td>${escapeHtml(selectedProduct.sku||'')}</td><td>${escapeHtml(selectedProduct.name)}<input type="hidden" name="item_code[]" value="${escapeHtml(selectedProduct.sku||'')}"><input type="hidden" name="item_name[]" value="${escapeHtml(selectedProduct.name)}"></td>
+      <td><input type="number" name="quantity[]" min="0.001" step="0.001" value="${q}"></td>
+      <td><input type="number" name="unit_price[]" min="0" step="0.01" value="${p}"></td>
+      <td><input type="number" name="discount_percent[]" min="0" max="100" step="0.01" value="${d}"></td>
+      <td><input type="number" name="tax_percent[]" min="0" max="100" step="0.01" value="${t}"></td>
+      <td class="line-total">0.00</td><td><button type="button" class="pos-remove" title="حذف الصنف">×</button></td>`;
+    row.querySelectorAll('input[type="number"]').forEach(input=>input.addEventListener('input',recalc));
+    row.querySelector('.pos-remove').addEventListener('click',()=>{row.remove(); ensureEmpty(); recalc(); focusSearch();});
+    tbody.appendChild(row); recalc();
+    selectedProduct=null; search.value=''; qty.value='1'; price.value='0'; discount.value='0'; tax.value='0'; suggestions.hidden=true; focusSearch();
+  }
+
+  function ensureEmpty(){ if(!hasItems()) tbody.innerHTML='<tr class="empty-row"><td colspan="9">لم تتم إضافة أصناف بعد</td></tr>'; }
+  function clearInvoice(){
+    if(!hasItems() && !form.notes.value.trim()) { focusSearch(); return; }
+    if(!confirm('هل أنت متأكد من مسح الفاتورة الحالية؟')) return;
+    tbody.innerHTML=''; ensureEmpty(); form.notes.value=''; recalc(); focusSearch();
+  }
+
+  let timer;
+  search.addEventListener('input',()=>{
+    selectedProduct=null;
+    if(mode==='name') { clearTimeout(timer); timer=setTimeout(async()=>{ try{renderSuggestions(await findProducts());}catch(e){suggestions.hidden=true;} },180); }
+  });
+  search.addEventListener('keydown', async event => {
+    if(mode==='name' && !suggestions.hidden && ['ArrowDown','ArrowUp'].includes(event.key)){
+      event.preventDefault(); activeIndex=(activeIndex+(event.key==='ArrowDown'?1:-1)+suggestionItems.length)%suggestionItems.length;
+      suggestions.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('active',i===activeIndex)); return;
+    }
+    if(event.key==='Enter'){
+      event.preventDefault();
+      try{
+        if(!selectedProduct){
+          const items = mode==='name' && suggestionItems.length ? suggestionItems : await findProducts();
+          const product = mode==='name' ? items[Math.max(activeIndex,0)] : items[0];
+          if(!product){ alert(mode==='barcode'?'الرقم التجاري غير موجود.':'لم يتم العثور على صنف بهذا الاسم.'); focusSearch(); return; }
+          selectProduct(product);
+        }
+        addSelectedProduct();
+      }catch(e){ alert(e.message); focusSearch(); }
+    }
+  });
+  suggestions.addEventListener('click',e=>{const b=e.target.closest('button[data-index]'); if(!b)return; selectProduct(suggestionItems[Number(b.dataset.index)]); focusSearch();});
+  document.getElementById('addItemBtn').addEventListener('click', async()=>{ if(!selectedProduct){const items=await findProducts(); if(items[0])selectProduct(items[0]);} addSelectedProduct(); });
+  document.getElementById('clearInvoiceBtn').addEventListener('click',clearInvoice);
+  form.addEventListener('submit',e=>{ if(!hasItems()){e.preventDefault(); alert('يجب إضافة صنف واحد على الأقل.'); focusSearch();} });
+  document.addEventListener('click',e=>{if(!e.target.closest('.pos-smart-field'))suggestions.hidden=true;});
+  document.addEventListener('keydown',event=>{
+    if(event.key==='F1'){event.preventDefault(); setMode(mode==='barcode'?'name':'barcode');}
+    else if(event.key==='F9'){event.preventDefault(); form.requestSubmit();}
+    else if(event.key==='Delete'){event.preventDefault(); clearInvoice();}
+  },true);
+  window.addEventListener('load',focusSearch);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block title %}العملاء{% endblock %}{% block content %}
+<div class="page-head"><div><h1>إدارة العملاء</h1><p>الملفات الائتمانية وبيانات الاتصال.</p></div></div>
+<div class="grid-2"><section class="card"><h2>إضافة عميل</h2><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>اسم العميل<input name="name" required></label><label>الهاتف<input name="phone"></label>
+<label>البريد الإلكتروني<input type="email" name="email"></label><label>حد الائتمان<input type="number" min="0" step="0.01" name="credit_limit" value="0"></label>
+<label class="full">العنوان<input name="address"></label><label class="full">ملاحظات<textarea name="notes"></textarea></label>
+<div class="full"><button class="btn primary">حفظ العميل</button></div></form></section>
+<section class="card"><h2>قائمة العملاء</h2><div class="table-wrap"><table><thead><tr><th>الرقم</th><th>الاسم</th><th>الهاتف</th><th>حد الائتمان</th><th>الحالة</th></tr></thead><tbody>
+{% for c in customers %}<tr><td>{{ c.customer_no }}</td><td>{{ c.name }}</td><td>{{ c.phone or '-' }}</td><td>{{ '%.2f'|format(c.credit_limit) }}</td><td>{{ 'نشط' if c.is_active else 'موقوف' }}</td></tr>{% else %}<tr><td colspan="5">لا يوجد عملاء بعد.</td></tr>{% endfor %}
+</tbody></table></div></section></div>{% endblock %}

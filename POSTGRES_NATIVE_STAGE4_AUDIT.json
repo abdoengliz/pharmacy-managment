@@ -1,0 +1,41 @@
+{
+  "app_insert_or_ignore": [],
+  "app_sqlite_master": [],
+  "app_pragma": [
+    {
+      "file": "app/core.py",
+      "line": 1224
+    },
+    {
+      "file": "app/report_engine.py",
+      "line": 26
+    }
+  ],
+  "python_greatest_call": [
+    {
+      "file": "app/routes.py",
+      "line": 1413
+    },
+    {
+      "file": "app/routes.py",
+      "line": 1418
+    },
+    {
+      "file": "app/routes.py",
+      "line": 2855
+    },
+    {
+      "file": "app/routes.py",
+      "line": 4234
+    },
+    {
+      "file": "app/routes.py",
+      "line": 4235
+    },
+    {
+      "file": "app/routes.py",
+      "line": 4238
+    }
+  ],
+  "lastrowid": []
+}

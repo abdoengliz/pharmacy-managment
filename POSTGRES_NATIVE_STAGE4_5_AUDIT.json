@@ -1,0 +1,30 @@
+{
+  "stage": "4.5",
+  "baseline": "4.4",
+  "focus": "PostgreSQL performance baseline",
+  "performance_indexes_added": 19,
+  "indexes": [
+    "CREATE INDEX IF NOT EXISTS idx_revenues_branch_date ON revenues(branch_id, revenue_date)",
+    "CREATE INDEX IF NOT EXISTS idx_expenses_branch_date ON expenses(branch_id, expense_date)",
+    "CREATE INDEX IF NOT EXISTS idx_supplier_accounts_supplier_location ON supplier_location_accounts(supplier_id, location_id)",
+    "CREATE INDEX IF NOT EXISTS idx_supplier_invoices_supplier_date ON supplier_invoices(supplier_id, invoice_date)",
+    "CREATE INDEX IF NOT EXISTS idx_supplier_invoices_branch_due ON supplier_invoices(branch_id, due_date)",
+    "CREATE INDEX IF NOT EXISTS idx_supplier_payments_supplier_date ON supplier_payments(supplier_id, payment_date)",
+    "CREATE INDEX IF NOT EXISTS idx_supplier_payments_branch_date ON supplier_payments(branch_id, payment_date)",
+    "CREATE INDEX IF NOT EXISTS idx_sales_invoices_branch_date ON sales_invoices(branch_id, invoice_date)",
+    "CREATE INDEX IF NOT EXISTS idx_sales_invoices_status_date ON sales_invoices(status, invoice_date)",
+    "CREATE INDEX IF NOT EXISTS idx_sales_items_invoice ON sales_invoice_items(invoice_id)",
+    "CREATE INDEX IF NOT EXISTS idx_stock_transfers_locations_date ON stock_transfers(from_location_id, to_location_id, transfer_date)",
+    "CREATE INDEX IF NOT EXISTS idx_stock_transfer_items_transfer ON stock_transfer_items(transfer_id)",
+    "CREATE INDEX IF NOT EXISTS idx_invoice_transfers_locations_date ON invoice_transfers(from_location_id, to_location_id, transfer_date)",
+    "CREATE INDEX IF NOT EXISTS idx_treasury_transfers_accounts_date ON treasury_transfers(from_account_id, to_account_id, transfer_date)",
+    "CREATE INDEX IF NOT EXISTS idx_external_debts_branch_date ON external_debts(branch_id, debt_date)",
+    "CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at)",
+    "CREATE INDEX IF NOT EXISTS idx_audit_log_user_created ON audit_log(user_id, created_at)",
+    "CREATE INDEX IF NOT EXISTS idx_approval_requests_status_requested ON approval_requests(status, requested_at)",
+    "CREATE INDEX IF NOT EXISTS idx_quick_notes_user_created ON quick_notes(user_id, created_at)"
+  ],
+  "python_compileall": "passed",
+  "pytest": "not_run_in_container_missing_flask_dependency",
+  "database_integration_test": "requires user Supabase environment"
+}

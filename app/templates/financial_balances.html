@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block title %}ملخص الأرصدة المالية{% endblock %}{% block content %}
+<div class="page-head"><div><h1>ملخص الأرصدة المالية</h1><p>الرصيد الحالي لكل حساب مالي في كل موقع والمجموع العام.</p></div><span class="badge">{{ '%.2f'|format(grand_total) }} {{ app_settings.get('currency','د.ل') }}</span></div>
+<div class="cards balance-type-cards">
+{% for key,label in type_labels.items() %}<div class="card"><span>{{ label }}</span><b>{{ '%.2f'|format(type_totals.get(key,0)) }}</b></div>{% endfor %}
+<div class="card total-card"><span>الإجمالي الكلي</span><b>{{ '%.2f'|format(grand_total) }}</b></div>
+</div>
+<div class="balance-location-grid">
+{% for location in locations %}<article class="panel balance-location-card"><div class="balance-card-head"><div><h2>{{ location.name }}</h2><small>{{ 'المخزن الرئيسي' if location.location_type=='MAIN_WAREHOUSE' else 'فرع' }}</small></div><strong>{{ '%.2f'|format(location.total) }}</strong></div>
+<div class="mini-balance-list">{% for key,label in type_labels.items() %}<div><span>{{ label }}</span><b>{{ '%.2f'|format(location.type_totals.get(key,0)) }}</b></div>{% endfor %}</div>
+<a class="btn primary full-btn" href="{{ url_for('location_financial_balance',location_id=location.id) }}">عرض تفاصيل خزينة الموقع</a></article>{% else %}<div class="panel empty">لا توجد حسابات مالية.</div>{% endfor %}
+</div>
+{% endblock %}

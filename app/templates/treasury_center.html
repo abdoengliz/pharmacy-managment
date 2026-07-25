@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}الخزينة الرئيسية وخزائن الفروع{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>الخزينة الرئيسية وخزائن الفروع</h1><p>المخزن هو المركز المالي الرئيسي، والفروع تورّد إليه إيراداتها.</p></div><div class="export-actions">{% if has_permission('export_treasury_reports') %}<a class="btn" href="{{ url_for('export_treasury_center',file_format='pdf') }}">PDF</a><a class="btn" href="{{ url_for('export_treasury_center',file_format='docx') }}">Word</a><a class="btn" href="{{ url_for('export_treasury_center',file_format='xlsx') }}">Excel</a>{% endif %}</div></div>
+<div class="cards stats treasury-summary">
+  <div class="card positive"><span>الخزينة الرئيسية — المخزن</span><b>{{ '%.2f'|format(totals.main) }}</b><small>د.ل</small></div>
+  <div class="card accent"><span>إجمالي خزائن الفروع</span><b>{{ '%.2f'|format(totals.branches) }}</b><small>د.ل</small></div>
+  <div class="card total-card"><span>إجمالي أموال الشركة</span><b>{{ '%.2f'|format(totals.company) }}</b><small>د.ل</small></div>
+</div>
+<div class="balance-location-grid">
+{% for loc in locations %}
+  <section class="panel balance-location-card {{ 'main-treasury-card' if loc.location_type=='MAIN_WAREHOUSE' else '' }}">
+    <div class="balance-card-head"><div><h2>{{ 'الخزينة الرئيسية — ' if loc.location_type=='MAIN_WAREHOUSE' else 'خزينة ' }}{{ loc.name }}</h2><small>{{ 'مركز الاستلام والسداد' if loc.location_type=='MAIN_WAREHOUSE' else 'مصدر الإيرادات والتوريدات' }}</small></div><strong>{{ '%.2f'|format(loc.total) }}</strong></div>
+    <div class="mini-balance-list">{% for a in loc.accounts %}<div><span>{{ a.account_name }} <small>({{ a.type_label }})</small></span><b>{{ '%.2f'|format(a.balance) }}</b></div>{% endfor %}</div>
+    <a class="btn primary full-btn" href="{{ url_for('location_financial_balance',location_id=loc.id) }}">تفاصيل الخزينة</a>
+  </section>
+{% endfor %}
+</div>
+{% if has_permission('create_treasury_transfers') %}
+<section class="panel treasury-transfer-form"><div class="section-head"><div><h2>إنشاء توريد أو تحويل مالي</h2><p>لا يؤثر على الإيرادات أو المصروفات؛ ينقل الرصيد بين حسابين فقط بعد الاستلام.</p></div></div>
+<form method="post" action="{{ url_for('create_treasury_transfer') }}" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>من الحساب<select name="from_account_id" required><option value="">اختر الحساب المصدر</option>{% for a in accounts %}<option value="{{ a.id }}">{{ a.location_name }} — {{ a.name }} ({{ '%.2f'|format(a.balance) }})</option>{% endfor %}</select></label>
+<label>إلى الحساب<select name="to_account_id" required><option value="">اختر الحساب المستلم</option>{% for a in accounts %}<option value="{{ a.id }}">{{ a.location_name }} — {{ a.name }}</option>{% endfor %}</select></label>
+<label>المبلغ<input type="number" min="0.01" step="0.01" name="amount" required></label>
+<label>التاريخ<input type="date" name="transfer_date" value="{{ today }}" required></label>
+<label class="full">ملاحظات<textarea name="notes" rows="2"></textarea></label>
+<div class="full"><button type="submit">إنشاء كمسودة</button></div>
+</form></section>
+{% endif %}
+<section class="table-wrap table-card"><div class="section-title"><h2>التوريدات والتحويلات المالية</h2><span>{{ transfers|length }} عملية</span></div><table><thead><tr><th>المرجع</th><th>من</th><th>إلى</th><th>المبلغ</th><th>التاريخ</th><th>الحالة</th><th></th></tr></thead><tbody>
+{% for t in transfers %}<tr><td>{{ t.transfer_number }}</td><td>{{ t.from_location }} — {{ t.from_account }}</td><td>{{ t.to_location }} — {{ t.to_account }}</td><td>{{ '%.2f'|format(t.amount) }}</td><td>{{ t.transfer_date }}</td><td><span class="status {{ t.status|lower }}">{{ status_labels.get(t.status,t.status) }}</span></td><td><div class="actions"><a class="button-link" href="{{ url_for('treasury_transfer_detail',transfer_id=t.id) }}">التفاصيل</a>{% if t.status!='CANCELLED' and has_permission('create_treasury_transfers') %}<a class="button-link" href="{{ url_for('edit_treasury_transfer',transfer_id=t.id) }}">تعديل</a><form method="post" action="{{ url_for('delete_treasury_transfer',transfer_id=t.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا التحويل؟ سيتم عكس أثره المالي إن كان مستلمًا، ولا يمكن التراجع.')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="danger-button">حذف</button></form>{% endif %}</div></td></tr>{% else %}<tr><td colspan="7" class="empty">لا توجد توريدات مالية بعد.</td></tr>{% endfor %}
+</tbody></table></section>
+{% endblock %}

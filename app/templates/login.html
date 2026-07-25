@@ -1,0 +1,20 @@
+{% extends 'base.html' %}{% block title %}تسجيل الدخول{% endblock %}{% block content %}
+<div class="login-card">
+<h1>تسجيل الدخول</h1>
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>المستخدم
+<select name="username" required autofocus>
+<option value="" disabled {{ 'selected' if not selected_username else '' }}>اختر المستخدم</option>
+{% for user in active_users %}
+<option value="{{ user.username }}" {{ 'selected' if selected_username == user.username else '' }}>{{ user.full_name }} ({{ user.username }})</option>
+{% endfor %}
+</select>
+</label>
+<label>كلمة المرور<input type="password" name="password" required autocomplete="current-password"></label>
+<button>دخول</button>
+</form>
+<div class="login-divider"><span>أو</span></div>
+<a class="attendance-login-link" href="{{ url_for('attendance_portal') }}">🕒 حضور وانصراف الموظفين</a>
+{% if not active_users %}<p class="hint">لا توجد حسابات مستخدمين مفعّلة.</p>{% endif %}
+</div>
+{% endblock %}

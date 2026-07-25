@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% block title %}معلومات الإصدار{% endblock %}{% block content %}
+<div class="page-head"><div><h1>معلومات إصدار النظام</h1><p>مرجع واضح لنسخة التطبيق وقاعدة البيانات المستخدمة.</p></div></div>
+<div class="stats-grid">
+<div class="stat-card"><span>إصدار النظام</span><strong>{{ settings.get('system_version','5.0.0-dev') }}</strong></div>
+<div class="stat-card"><span>اسم الإصدار</span><strong>{{ settings.get('release_name','Enterprise Foundation') }}</strong></div>
+<div class="stat-card"><span>إصدار قاعدة البيانات</span><strong>{{ settings.get('database_version','5.0') }}</strong></div>
+<div class="stat-card"><span>تعريفات سير العمل</span><strong>{{ workflow_count }}</strong></div>
+</div>
+<div class="panel"><h2>بيانات الإصدار</h2><div class="detail-grid">
+<div><span>تاريخ الإصدار</span><strong>{{ settings.get('release_date','2026-07-20') }}</strong></div>
+<div><span>اسم المطور</span><strong>{{ settings.get('developer_name','Pharma ERP Development Team') }}</strong></div>
+<div><span>عدد حالات سير العمل</span><strong>{{ state_count }}</strong></div>
+<div><span>نوع النسخة</span><strong>نسخة تطوير — غير مخصصة للإنتاج</strong></div>
+</div></div>{% endblock %}

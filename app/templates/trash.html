@@ -1,0 +1,9 @@
+{% extends 'base.html' %}{% block title %}سلة المحذوفات{% endblock %}{% block content %}
+<div class="page-head"><div><h1>🗑️ سلة المحذوفات</h1><p>استرجاع السجلات أو حذفها نهائيًا.</p></div></div>
+<div class="cards-grid compact">
+{% for c in counts %}<div class="metric-card"><small>{{ {'revenues':'الإيرادات','expenses':'المصروفات','supplier_payments':'السدادات','suppliers':'الموردون'}.get(c.module,c.module) }}</small><strong>{{ c.count }}</strong></div>{% endfor %}
+</div>
+<div class="card table-card"><div class="table-wrap"><table><thead><tr><th>القسم</th><th>السجل</th><th>حذف بواسطة</th><th>التاريخ</th><th>السبب</th><th>الإجراءات</th></tr></thead><tbody>
+{% for row in rows %}<tr><td>{{ {'revenues':'إيراد','expenses':'مصروف','supplier_payments':'سداد مورد','suppliers':'مورد'}.get(row.module,row.module) }}</td><td>{{ row.record_name }}</td><td>{{ row.deleted_by_name }}</td><td>{{ row.deleted_at }}</td><td>{{ row.reason or '—' }}</td><td><div class="actions"><form method="post" action="{{ url_for('restore_trash',trash_id=row.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-small">↩ استرجاع</button></form>{% if current_user.role=='admin' %}<form method="post" action="{{ url_for('purge_trash',trash_id=row.id) }}" onsubmit="return confirm('حذف نهائي ولا يمكن التراجع عنه؟')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn danger btn-small">حذف نهائي</button></form>{% endif %}</div></td></tr>{% else %}<tr><td colspan="6" class="empty-note">سلة المحذوفات فارغة.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

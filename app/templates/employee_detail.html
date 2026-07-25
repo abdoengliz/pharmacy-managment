@@ -1,0 +1,101 @@
+{% extends 'base.html' %}{% block title %}{{ row.full_name }}{% endblock %}{% block content %}
+{% set status_names={'active':'على رأس العمل','leave':'في إجازة','suspended':'موقوف','resigned':'مستقيل'} %}
+{% set contract_names={'permanent':'دائم','temporary':'مؤقت','part_time':'دوام جزئي','training':'تدريب'} %}
+{% set shift_names={'full':'كامل','morning':'صباحي','evening':'مسائي','flexible':'مرن'} %}
+{% set net_fixed=(row.basic_salary or 0)+(row.fixed_allowances or 0)-(row.fixed_deductions or 0) %}
+
+<div class="employee-hero card">
+  <div class="employee-identity">
+    <div class="employee-avatar">{{ row.full_name[:1] }}</div>
+    <div>
+      <div class="employee-title-row"><h1>{{ row.full_name }}</h1><span class="status employee-status-{{ row.employment_status }}">{{ status_names.get(row.employment_status,row.employment_status) }}</span></div>
+      <p>{{ row.employee_no }} · {{ row.job_title or 'بدون مسمى وظيفي' }} · {{ row.department or 'بدون قسم' }}</p>
+      <div class="employee-meta"><span>🏢 {{ row.branch_name or 'بدون فرع' }}</span><span>📞 {{ row.phone or 'لا يوجد هاتف' }}</span><span>🗓 منذ {{ row.work_start_date or row.hire_date }}</span></div>
+    </div>
+  </div>
+  <div class="employee-actions no-print">
+    <a class="btn secondary" href="{{ url_for('employees') }}">رجوع</a>
+    {% if has_permission('edit_employees') %}<a class="btn primary" href="{{ url_for('edit_employee', employee_id=row.id) }}">تعديل البيانات</a>{% endif %}
+    <button class="btn secondary" type="button" onclick="window.print()">طباعة البطاقة</button>
+  </div>
+</div>
+
+<div class="employee-stats hr-stats">
+  <section class="card employee-stat"><small>حضور الشهر</small><strong>{{ month_stats.present_days or 0 }}</strong><span>يوم</span></section>
+  <section class="card employee-stat"><small>غياب الشهر</small><strong>{{ month_stats.absent_days or 0 }}</strong><span>يوم</span></section>
+  <section class="card employee-stat"><small>تأخير الشهر</small><strong>{{ month_stats.late_days or 0 }}</strong><span>يوم</span></section>
+  <section class="card employee-stat"><small>ساعات إضافية</small><strong>{{ '%.1f'|format(month_stats.overtime or 0) }}</strong><span>ساعة</span></section>
+</div>
+
+<div class="employee-quick-actions no-print">
+  {% if has_permission('manage_attendance') %}<button type="button" data-open-tab="attendance">🕒 تسجيل حضور</button><button type="button" data-open-tab="leaves">🏖 إضافة إجازة</button>{% endif %}
+  {% if has_permission('manage_employee_finance') %}<button type="button" data-open-tab="finance">💵 حركة مالية</button>{% endif %}
+  {% if has_permission('manage_payroll') %}<button type="button" data-open-tab="payroll">💰 إعداد راتب</button>{% endif %}
+</div>
+
+<div class="tabs hr-nav no-print" role="tablist">
+  <button class="hr-tab active" type="button" data-tab="profile">الملف الوظيفي</button>
+  <button class="hr-tab" type="button" data-tab="financial">المعلومات المالية</button>
+  <button class="hr-tab" type="button" data-tab="attendance">الحضور</button>
+  <button class="hr-tab" type="button" data-tab="leaves">الإجازات</button>
+  <button class="hr-tab" type="button" data-tab="finance">السلف والتعديلات</button>
+  <button class="hr-tab" type="button" data-tab="payroll">الرواتب</button>
+  <button class="hr-tab" type="button" data-tab="history">سجل الموظف</button>
+</div>
+
+<section class="card hr-section hr-tab-panel active" id="profile" data-panel="profile">
+<div class="employee-card-head"><div><h2>الملف الوظيفي</h2><p>البيانات الأساسية والتنظيمية للموظف.</p></div>{% if has_permission('edit_employees') %}<form method="post" action="{{ url_for('toggle_employee', employee_id=row.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="{{ 'danger-button' if row.is_active else '' }}">{{ 'إيقاف الموظف' if row.is_active else 'تفعيل الموظف' }}</button></form>{% endif %}</div>
+<div class="detail-grid">
+<div class="detail-item"><small>الرقم الوظيفي</small><strong>{{ row.employee_no }}</strong></div><div class="detail-item"><small>كود الموظف</small><strong>{{ row.employee_code or '-' }}</strong></div><div class="detail-item"><small>رقم البصمة</small><strong>{{ row.biometric_no or '-' }}</strong></div>
+<div class="detail-item"><small>الفرع</small><strong>{{ row.branch_name or 'بدون فرع' }}</strong></div><div class="detail-item"><small>القسم</small><strong>{{ row.department or '-' }}</strong></div><div class="detail-item"><small>المسمى الوظيفي</small><strong>{{ row.job_title or '-' }}</strong></div>
+<div class="detail-item"><small>المدير المباشر</small><strong>{{ row.direct_manager or '-' }}</strong></div><div class="detail-item"><small>نوع العقد</small><strong>{{ contract_names.get(row.contract_type,row.contract_type) }}</strong></div><div class="detail-item"><small>نوع الدوام</small><strong>{{ shift_names.get(row.shift_type,row.shift_type) }}</strong></div>
+<div class="detail-item"><small>تاريخ التعيين</small><strong>{{ row.hire_date }}</strong></div><div class="detail-item"><small>تاريخ المباشرة</small><strong>{{ row.work_start_date or row.hire_date }}</strong></div><div class="detail-item"><small>ساعات العمل اليومية</small><strong>{{ row.daily_hours or 8 }}</strong></div>
+<div class="detail-item wide"><small>أيام العمل الأسبوعية</small><strong>{{ row.work_days or '-' }}</strong></div><div class="detail-item"><small>الهاتف</small><strong>{{ row.phone or '-' }}</strong></div><div class="detail-item"><small>جهة اتصال للطوارئ</small><strong>{{ row.emergency_contact_name or '-' }}</strong></div>
+<div class="detail-item"><small>هاتف الطوارئ</small><strong>{{ row.emergency_contact_phone or '-' }}</strong></div><div class="detail-item wide"><small>العنوان</small><strong>{{ row.address or '-' }}</strong></div><div class="detail-item wide"><small>ملاحظات</small><strong>{{ row.notes or '-' }}</strong></div>
+</div></section>
+
+<section class="card hr-section hr-tab-panel" id="financial" data-panel="financial">
+<div class="section-head"><div><h2>المعلومات المالية</h2><p>ملخص الراتب الثابت والبيانات البنكية.</p></div></div>
+<div class="finance-summary-grid"><article><small>الراتب الأساسي</small><strong>{{ '%.2f'|format(row.basic_salary or 0) }}</strong></article><article><small>البدلات الثابتة</small><strong>{{ '%.2f'|format(row.fixed_allowances or 0) }}</strong></article><article><small>الخصومات الثابتة</small><strong>{{ '%.2f'|format(row.fixed_deductions or 0) }}</strong></article><article class="net"><small>الصافي الثابت المتوقع</small><strong>{{ '%.2f'|format(net_fixed) }}</strong></article></div>
+<div class="detail-grid"><div class="detail-item"><small>اسم البنك</small><strong>{{ row.bank_name or '-' }}</strong></div><div class="detail-item"><small>رقم الحساب البنكي</small><strong>{{ row.bank_account or '-' }}</strong></div><div class="detail-item"><small>إجمالي السلف المعتمدة</small><strong>{{ '%.2f'|format(finance_stats.advances or 0) }}</strong></div><div class="detail-item"><small>إجمالي المكافآت المعتمدة</small><strong>{{ '%.2f'|format(finance_stats.bonuses or 0) }}</strong></div><div class="detail-item"><small>إجمالي الخصومات المعتمدة</small><strong>{{ '%.2f'|format(finance_stats.deductions or 0) }}</strong></div><div class="detail-item"><small>آخر راتب</small><strong>{% if latest_payroll %}{{ latest_payroll.payroll_month }} — {{ '%.2f'|format(latest_payroll.net_salary) }}{% else %}-{% endif %}</strong></div></div>
+</section>
+
+<section class="card hr-section hr-tab-panel" id="attendance" data-panel="attendance"><div class="section-head"><div><h2>الحضور والانصراف</h2><p>يمكن تسجيل اليوم أو تحديثه إذا كان مسجلًا مسبقًا.</p></div></div>
+{% if has_permission('manage_attendance') %}<form class="hr-form" method="post" action="{{ url_for('add_employee_attendance', employee_id=row.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>التاريخ<input type="date" name="work_date" value="{{ today }}" required></label><label>الحالة<select name="status"><option value="present">حاضر</option><option value="late">متأخر</option><option value="absent">غائب</option><option value="leave">إجازة</option><option value="holiday">عطلة</option></select></label><label>دخول<input type="time" name="check_in"></label><label>خروج<input type="time" name="check_out"></label><label>إضافي<input type="number" step="0.5" min="0" name="overtime_hours" value="0"></label><label class="wide">ملاحظات<input name="notes"></label><button class="btn primary">حفظ الحضور</button></form>{% endif %}
+<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>الحالة</th><th>الدخول</th><th>الخروج</th><th>إضافي</th><th>ملاحظات</th></tr></thead><tbody>{% for x in attendance %}<tr><td>{{ x.work_date }}</td><td><span class="status {{ x.status }}">{{ {'present':'حاضر','absent':'غائب','late':'متأخر','leave':'إجازة','holiday':'عطلة'}.get(x.status,x.status) }}</span></td><td>{{ x.check_in or '-' }}</td><td>{{ x.check_out or '-' }}</td><td>{{ x.overtime_hours }}</td><td>{{ x.notes or '-' }}</td></tr>{% else %}<tr><td colspan="6">لا توجد سجلات حضور.</td></tr>{% endfor %}</tbody></table></div></section>
+
+<section class="card hr-section hr-tab-panel" id="leaves" data-panel="leaves"><div class="section-head"><div><h2>الإجازات</h2><p>إجمالي الأيام المعتمدة: {{ leave_stats.approved_days or 0 }} · طلبات قيد المراجعة: {{ leave_stats.pending_requests or 0 }}</p></div></div>
+{% if has_permission('manage_attendance') %}<form class="hr-form" method="post" action="{{ url_for('add_employee_leave', employee_id=row.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>النوع<select name="leave_type"><option value="annual">سنوية</option><option value="sick">مرضية</option><option value="emergency">طارئة</option><option value="unpaid">بدون مرتب</option><option value="other">أخرى</option></select></label><label>من<input type="date" name="start_date" value="{{ today }}" required></label><label>إلى<input type="date" name="end_date" value="{{ today }}" required></label><label>الحالة<select name="status"><option value="approved">معتمدة</option><option value="pending">قيد المراجعة</option><option value="rejected">مرفوضة</option></select></label><label class="wide">ملاحظات<input name="notes"></label><button class="btn primary">إضافة إجازة</button></form>{% endif %}
+<div class="table-wrap"><table><thead><tr><th>النوع</th><th>من</th><th>إلى</th><th>الأيام</th><th>الحالة</th><th>ملاحظات</th></tr></thead><tbody>{% for x in leaves %}<tr><td>{{ {'annual':'سنوية','sick':'مرضية','emergency':'طارئة','unpaid':'بدون مرتب','other':'أخرى'}.get(x.leave_type,x.leave_type) }}</td><td>{{ x.start_date }}</td><td>{{ x.end_date }}</td><td>{{ x.days }}</td><td>{{ {'approved':'معتمدة','pending':'قيد المراجعة','rejected':'مرفوضة'}.get(x.status,x.status) }}</td><td>{{ x.notes or '-' }}</td></tr>{% else %}<tr><td colspan="6">لا توجد إجازات.</td></tr>{% endfor %}</tbody></table></div></section>
+
+<section class="card hr-section hr-tab-panel" id="finance" data-panel="finance"><div class="section-head"><div><h2>السلف والخصومات والمكافآت</h2><p>تدخل الحركات المعتمدة تلقائيًا في كشف راتب نفس الشهر.</p></div></div>
+{% if has_permission('manage_employee_finance') %}<form class="hr-form" method="post" action="{{ url_for('add_employee_adjustment', employee_id=row.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>النوع<select name="adjustment_type"><option value="bonus">مكافأة</option><option value="deduction">خصم</option><option value="advance">سلفة</option></select></label><label>المبلغ<input type="number" step="0.01" min="0.01" name="amount" required></label><label>التاريخ<input type="date" name="adjustment_date" value="{{ today }}" required></label><label>الحالة<select name="status"><option value="approved">معتمدة</option><option value="pending">قيد المراجعة</option><option value="cancelled">ملغاة</option></select></label><label class="wide">البيان<input name="notes"></label><button class="btn primary">حفظ الحركة</button></form>{% endif %}
+<div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>الحالة</th><th>البيان</th></tr></thead><tbody>{% for x in adjustments %}<tr><td>{{ x.adjustment_date }}</td><td>{{ {'bonus':'مكافأة','deduction':'خصم','advance':'سلفة'}.get(x.adjustment_type,x.adjustment_type) }}</td><td>{{ '%.2f'|format(x.amount) }}</td><td>{{ {'approved':'معتمدة','pending':'قيد المراجعة','cancelled':'ملغاة'}.get(x.status,x.status) }}</td><td>{{ x.notes or '-' }}</td></tr>{% else %}<tr><td colspan="5">لا توجد حركات مالية.</td></tr>{% endfor %}</tbody></table></div></section>
+
+<section class="card hr-section hr-tab-panel" id="payroll" data-panel="payroll"><div class="section-head"><div><h2>كشوف الرواتب</h2><p>الصافي = الأساسي + البدلات + المكافآت − الخصومات − السلف.</p></div></div>
+{% if has_permission('manage_payroll') %}<form class="hr-form payroll-form" method="post" action="{{ url_for('generate_employee_payroll', employee_id=row.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>شهر الراتب<input type="month" name="payroll_month" value="{{ month }}" required></label><label class="wide">ملاحظات<input name="notes"></label><button class="btn primary">حساب / تحديث الراتب</button></form>{% endif %}
+<div class="table-wrap"><table><thead><tr><th>الشهر</th><th>الأساسي</th><th>مكافآت</th><th>خصومات</th><th>سلف</th><th>الصافي</th><th>الحالة</th><th></th></tr></thead><tbody>{% for x in payroll %}<tr><td>{{ x.payroll_month }}</td><td>{{ '%.2f'|format(x.basic_salary) }}</td><td>{{ '%.2f'|format(x.bonuses) }}</td><td>{{ '%.2f'|format(x.deductions) }}</td><td>{{ '%.2f'|format(x.advances) }}</td><td><strong>{{ '%.2f'|format(x.net_salary) }}</strong></td><td><span class="status {{ x.status }}">{{ 'مدفوع' if x.status=='paid' else 'مسودة' }}</span></td><td>{% if x.status!='paid' and has_permission('manage_payroll') %}<form method="post" action="{{ url_for('mark_employee_payroll_paid', payroll_id=x.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn">اعتماد الدفع</button></form>{% endif %}</td></tr>{% else %}<tr><td colspan="8">لم يتم إعداد رواتب.</td></tr>{% endfor %}</tbody></table></div></section>
+
+<section class="card hr-section hr-tab-panel" id="history" data-panel="history"><div class="section-head"><div><h2>سجل الموظف</h2><p>تسلسل زمني موحد للحضور والإجازات والحركات المالية والرواتب.</p></div></div>
+<div class="employee-timeline">{% for item in employee_history %}<article class="timeline-item timeline-{{ item.type }}"><div class="timeline-dot"></div><div class="timeline-body"><small>{{ item.date }}</small><strong>{{ item.title }}</strong><p>{{ item.details }}</p></div></article>{% else %}<div class="empty-note">لا توجد أحداث مسجلة.</div>{% endfor %}</div></section>
+
+<script>
+(function(){
+  const tabs=[...document.querySelectorAll('[data-tab]')];
+  const panels=[...document.querySelectorAll('[data-panel]')];
+  function openTab(name, updateHash=true){
+    if(!panels.some(p=>p.dataset.panel===name)) name='profile';
+    tabs.forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+    panels.forEach(p=>p.classList.toggle('active',p.dataset.panel===name));
+    if(updateHash) history.replaceState(null,'','#'+name);
+    const firstInput=document.querySelector('[data-panel="'+name+'"] input, [data-panel="'+name+'"] select');
+    if(firstInput && ['attendance','leaves','finance','payroll'].includes(name)) setTimeout(()=>firstInput.focus(),80);
+  }
+  tabs.forEach(t=>t.addEventListener('click',()=>openTab(t.dataset.tab)));
+  document.querySelectorAll('[data-open-tab]').forEach(b=>b.addEventListener('click',()=>openTab(b.dataset.openTab)));
+  openTab((location.hash||'#profile').slice(1),false);
+  window.addEventListener('hashchange',()=>openTab((location.hash||'#profile').slice(1),false));
+})();
+</script>
+{% endblock %}

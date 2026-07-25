@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}لوحة تحكم مدير الفرع — {{ app_settings.get('company_name', 'Pharma ERP') }}<script>
+(() => {
+  const labels = {{ chart_labels|tojson }};
+  const values = {{ chart_values|tojson }};
+  const currency = {{ app_settings.get('currency','د.ل')|tojson }};
+  const canvas = document.getElementById('revenueChart');
+  const empty = document.getElementById('chartEmpty');
+  function drawRevenueChart(){
+    if(!canvas) return;
+    const rect=canvas.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+    canvas.width=Math.max(600,rect.width)*dpr; canvas.height=310*dpr;
+    const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+    const w=canvas.width/dpr,h=310,p={l:58,r:22,t:28,b:42};
+    ctx.clearRect(0,0,w,h);
+    const max=Math.max(...values,0); empty.style.display=max<=0?'grid':'none';
+    const top=max>0?max*1.15:1;
+    ctx.font='12px Arial';ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');ctx.textAlign='right';
+    for(let i=0;i<=4;i++){const y=p.t+(h-p.t-p.b)*(i/4);ctx.strokeStyle='rgba(148,163,184,.22)';ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText(Math.round(top*(1-i/4)).toLocaleString('en-US'),p.l-8,y+4)}
+    if(values.length<1||max<=0)return;
+    const step=(w-p.l-p.r)/Math.max(1,values.length-1); const points=values.map((v,i)=>[p.l+i*step,p.t+(h-p.t-p.b)*(1-v/top)]);
+    const grad=ctx.createLinearGradient(0,p.t,0,h-p.b);grad.addColorStop(0,'rgba(16,185,129,.30)');grad.addColorStop(1,'rgba(16,185,129,.02)');
+    ctx.beginPath();ctx.moveTo(points[0][0],h-p.b);points.forEach(pt=>ctx.lineTo(pt[0],pt[1]));ctx.lineTo(points.at(-1)[0],h-p.b);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+    ctx.beginPath();points.forEach((pt,i)=>i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]));ctx.strokeStyle='#059669';ctx.lineWidth=3;ctx.lineJoin='round';ctx.stroke();
+    points.forEach((pt,i)=>{ctx.beginPath();ctx.arc(pt[0],pt[1],3.5,0,Math.PI*2);ctx.fillStyle='#059669';ctx.fill();if(i===0||i===points.length-1||i%Math.ceil(points.length/8)===0){ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');ctx.textAlign='center';ctx.fillText(labels[i],pt[0],h-15)}});
+  }
+  const payments={{ payment_breakdown|tojson }}; const payCanvas=document.getElementById('paymentChart'),legend=document.getElementById('paymentLegend');
+  function drawPayments(){if(!payCanvas)return;const ctx=payCanvas.getContext('2d'),total=payments.reduce((s,x)=>s+x.value,0),colors=['#059669','#2563eb','#8b5cf6','#f59e0b','#ef4444','#06b6d4'];let angle=-Math.PI/2;ctx.clearRect(0,0,190,190);payments.forEach((x,i)=>{const slice=total?x.value/total*Math.PI*2:0;ctx.beginPath();ctx.arc(95,95,78,angle,angle+slice);ctx.arc(95,95,45,angle+slice,angle,true);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();angle+=slice});ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');ctx.font='bold 15px Arial';ctx.textAlign='center';ctx.fillText(total.toLocaleString('en-US',{maximumFractionDigits:0}),95,92);ctx.font='11px Arial';ctx.fillText(currency,95,110);legend.innerHTML=payments.map((x,i)=>`<div><i style="background:${colors[i%colors.length]}"></i><span>${x.name}</span><strong>${total?(x.value/total*100).toFixed(1):0}%</strong><small>${x.value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</small></div>`).join('')||'<p class="empty-note">لا توجد بيانات.</p>'}
+  drawRevenueChart();drawPayments();window.addEventListener('resize',()=>{clearTimeout(window.__dashResize);window.__dashResize=setTimeout(drawRevenueChart,120)});
+})();
+</script>
+{% endblock %}
+{% block content %}
+<div class="page-heading dashboard-heading manager-heading">
+  <div><p class="eyebrow">مركز عمل مدير الفرع</p><h1>لوحة التحكم والتحليلات</h1><p>مؤشرات مالية وتشغيلية لحظية مع تحليل الإيرادات ومقارنة الفترات.</p></div>
+  <div class="version-chip">الإصدار {{ app_settings.get('system_version', '5.8.0') }}</div>
+</div>
+
+<form class="analytics-filter panel" method="get" action="{{ url_for('dashboard') }}">
+  <div class="analytics-quick-periods">
+    {% for key,label in [('today','اليوم'),('week','7 أيام'),('month','هذا الشهر'),('year','هذه السنة')] %}
+    <button type="submit" name="period" value="{{ key }}" class="analytics-period-btn {{ 'active' if period==key else '' }}">{{ label }}</button>
+    {% endfor %}
+  </div>
+  {% if current_user.role == 'admin' %}
+  <label>الفرع<select name="branch_id" onchange="this.form.submit()"><option value="">كل الفروع</option>{% for branch in available_branches %}<option value="{{ branch.id }}" {{ 'selected' if selected_branch_id==branch.id else '' }}>{{ branch.name }}</option>{% endfor %}</select></label>
+  {% endif %}
+  <input type="hidden" name="period" value="custom">
+  <label>من<input type="date" name="start_date" value="{{ start_date }}"></label>
+  <label>إلى<input type="date" name="end_date" value="{{ end_date }}"></label>
+  <button class="btn primary" type="submit">تطبيق</button>
+  <strong class="analytics-period-label">{{ period_label }}</strong>
+</form>
+
+<section class="analytics-kpi-grid">
+  {% set kpis = [
+    ('إجمالي الإيرادات', revenue_total, analytics_changes.revenue, 'income', '💵'),
+    ('إجمالي المبيعات', sales_period.total, none, 'sales', '🛒'),
+    ('صافي النتيجة', net_total, analytics_changes.net, 'net', '📈'),
+    ('إجمالي المصروفات', expense_total, analytics_changes.expense, 'expense', '💸'),
+    ('سدادات الموردين', payment_total, analytics_changes.payments, 'payments', '🏦')
+  ] %}
+  {% for title,value,change,kind,icon in kpis %}
+  <article class="analytics-kpi {{ kind }}">
+    <span class="analytics-kpi-icon">{{ icon }}</span><small>{{ title }}</small>
+    <strong>{{ '%.2f'|format(value or 0) }} <em>{{ app_settings.get('currency','د.ل') }}</em></strong>
+    {% if change is not none %}<span class="kpi-change {{ 'up' if change >= 0 else 'down' }}">{{ '▲' if change >= 0 else '▼' }} {{ change|abs }}% <i>عن الفترة السابقة</i></span>{% else %}<span class="kpi-change neutral">{{ sales_period.invoices }} فاتورة خلال الفترة</span>{% endif %}
+  </article>
+  {% endfor %}
+  <article class="analytics-kpi inventory"><span class="analytics-kpi-icon">📦</span><small>منتجات منخفضة المخزون</small><strong>{{ branch_manager_stats.low_stock }}</strong><span class="kpi-change neutral">تحتاج متابعة وإعادة طلب</span></article>
+</section>
+
+<section class="analytics-main-grid">
+  <article class="panel revenue-chart-panel">
+    <div class="panel-head"><div><h2>📈 الإيرادات — رسم بياني</h2><span>حركة الإيرادات اليومية خلال {{ period_label }}</span></div><a class="text-link" href="{{ url_for('revenues') }}">عرض تقرير الإيرادات</a></div>
+    <div class="revenue-chart-wrap"><canvas id="revenueChart" height="310" aria-label="الرسم البياني للإيرادات"></canvas><div class="chart-empty" id="chartEmpty">لا توجد إيرادات في الفترة المختارة.</div></div>
+  </article>
+  <aside class="panel analytics-summary-card">
+    <div class="panel-head"><div><h2>ملخص الإيرادات</h2><span>{{ period_label }}</span></div></div>
+    <strong class="summary-total">{{ '%.2f'|format(revenue_total) }} <small>{{ app_settings.get('currency','د.ل') }}</small></strong>
+    {% if analytics_changes.revenue is not none %}<div class="summary-change {{ 'positive' if analytics_changes.revenue >= 0 else 'negative' }}">{{ '▲' if analytics_changes.revenue >= 0 else '▼' }} {{ analytics_changes.revenue|abs }}% مقارنة بالفترة السابقة</div>{% endif %}
+    <dl class="analytics-summary-list">
+      <div><dt>متوسط الإيراد اليومي</dt><dd>{{ '%.2f'|format(revenue_average) }}</dd></div>
+      <div><dt>أعلى يوم</dt><dd>{{ best_revenue_day.label }} · {{ '%.2f'|format(best_revenue_day.value) }}</dd></div>
+      <div><dt>الفترة السابقة</dt><dd>{{ '%.2f'|format(previous_revenue) }}</dd></div>
+      <div><dt>عدد فواتير المبيعات</dt><dd>{{ sales_period.invoices }}</dd></div>
+    </dl>
+  </aside>
+</section>
+
+<section class="analytics-detail-grid">
+  <article class="panel payment-breakdown-panel"><div class="panel-head"><div><h2>◉ توزيع الإيرادات حسب طريقة الدفع</h2><span>نسبة كل قناة من إجمالي الإيرادات</span></div></div><div class="payment-breakdown-body"><canvas id="paymentChart" width="190" height="190"></canvas><div class="payment-legend" id="paymentLegend"></div></div></article>
+  <article class="panel top-products-panel"><div class="panel-head"><div><h2>🏆 أفضل المنتجات مبيعًا</h2><span>حسب قيمة المبيعات في الفترة</span></div></div><div class="compact-table"><div class="compact-row head"><span>المنتج</span><span>الكمية</span><span>الإيراد</span></div>{% for item in top_products %}<div class="compact-row"><strong>{{ item.item_name }}</strong><span>{{ '%.2f'|format(item.quantity) }}</span><span>{{ '%.2f'|format(item.total) }}</span></div>{% else %}<p class="empty-note">لا توجد مبيعات منتجات في الفترة.</p>{% endfor %}</div></article>
+  <article class="panel period-comparison-panel"><div class="panel-head"><div><h2>↗ مقارنة الفترة السابقة</h2><span>قراءة سريعة لأهم المؤشرات</span></div></div>{% for label,current,previous,change in [('الإيرادات',revenue_total,previous_revenue,analytics_changes.revenue),('المصروفات',expense_total,previous_expense,analytics_changes.expense),('سدادات الموردين',payment_total,previous_payments,analytics_changes.payments),('الصافي',net_total,previous_net,analytics_changes.net)] %}<div class="comparison-row"><div><strong>{{ label }}</strong><small>{{ '%.2f'|format(current) }} مقابل {{ '%.2f'|format(previous) }}</small></div><span class="{{ 'positive' if change is not none and change >= 0 else 'negative' }}">{% if change is none %}—{% else %}{{ '▲' if change >= 0 else '▼' }} {{ change|abs }}%{% endif %}</span></div>{% endfor %}</article>
+</section>
+
+<div class="panel-head operations-heading"><div><h2>مؤشرات التشغيل اليومية</h2><span>الحضور والمهام والتنبيهات الحالية</span></div></div>
+<section class="manager-stat-grid">
+  <a class="manager-stat" href="{{ url_for('employees') }}"><span>👥</span><div><small>الموظفون النشطون</small><strong>{{ branch_manager_stats.active_employees }}</strong></div></a>
+  <a class="manager-stat success" href="{{ url_for('employees') }}"><span>🟢</span><div><small>الحاضرون اليوم</small><strong>{{ branch_manager_stats.present }}</strong></div></a>
+  <a class="manager-stat info" href="{{ url_for('employees') }}"><span>🏪</span><div><small>الموجودون الآن</small><strong>{{ branch_manager_stats.inside_now }}</strong></div></a>
+  <a class="manager-stat danger" href="{{ url_for('employees') }}"><span>🔴</span><div><small>لم يسجلوا حضورًا</small><strong>{{ branch_manager_stats.absent }}</strong></div></a>
+  <a class="manager-stat money" href="{{ url_for('sales_invoices_page') if has_permission('view_sales') else url_for('dashboard') }}"><span>💰</span><div><small>مبيعات اليوم</small><strong>{{ '%.2f'|format(branch_manager_stats.sales_total) }}</strong><em>{{ app_settings.get('currency','د.ل') }}</em></div></a>
+  <a class="manager-stat" href="{{ url_for('tasks_page') }}"><span>📋</span><div><small>مهام مفتوحة</small><strong>{{ dashboard_open_tasks }}</strong></div></a>
+  {% if has_permission('view_approvals') %}<a class="manager-stat" href="{{ url_for('approvals_center') }}"><span>✅</span><div><small>اعتمادات معلقة</small><strong>{{ pending_approvals }}</strong></div></a>{% endif %}
+</section>
+
+<div class="manager-work-grid">
+  <section class="panel manager-tasks-panel">
+    <div class="panel-head"><div><h2>📋 مهام مدير الفرع</h2><span>{{ task_summary.open }} مفتوحة · {{ task_summary.high }} عاجلة · {{ task_summary.overdue }} متأخرة</span></div><a class="text-link" href="{{ url_for('tasks_page') }}">عرض الكل</a></div>
+    <form class="manager-task-form" method="post" action="{{ url_for('dashboard_add_task') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input name="title" required maxlength="160" placeholder="اكتب مهمة جديدة...">
+      <select name="priority"><option value="NORMAL">متوسطة</option><option value="HIGH">عالية</option><option value="LOW">منخفضة</option></select>
+      <input type="date" name="due_date" value="{{ dashboard_today }}">
+      <input type="time" name="due_time">
+      <button class="btn primary" type="submit">+ إضافة</button>
+      <textarea name="description" rows="2" placeholder="وصف مختصر (اختياري)"></textarea>
+    </form>
+    <div class="manager-task-list">
+      {% for task in manager_tasks %}
+      <article class="manager-task-item {{ 'overdue' if task.due_at and task.due_at[:10] < dashboard_today else '' }}">
+        <form method="post" action="{{ url_for('dashboard_toggle_task', task_id=task.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="task-check" title="إنجاز المهمة">○</button></form>
+        <div class="task-body"><div><strong>{{ task.title }}</strong><span class="priority {{ task.priority|lower }}">{{ 'عالية' if task.priority=='HIGH' else 'منخفضة' if task.priority=='LOW' else 'متوسطة' }}</span>{% if task.task_type!='MANUAL' %}<span class="auto-task">🤖 تلقائية</span>{% endif %}</div><p>{{ task.description or '' }}</p><small>{% if task.due_at %}⏰ {{ task.due_at }}{% else %}بدون موعد{% endif %}{% if task.location_name %} · {{ task.location_name }}{% endif %}</small></div>
+        {% if task.action_url %}<a class="task-open-link" href="{{ task.action_url }}">فتح</a>{% endif %}
+        {% if task.task_type=='MANUAL' %}<form method="post" action="{{ url_for('dashboard_delete_task', task_id=task.id) }}" onsubmit="return confirm('حذف المهمة؟')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="icon-danger" title="حذف">×</button></form>{% endif %}
+      </article>
+      {% else %}<p class="empty-note">ممتاز، لا توجد مهام مفتوحة حاليًا.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="panel quick-notes-panel">
+    <div class="panel-head"><div><h2>⭐ الملاحظات السريعة</h2><span>دفتر ملاحظات خاص بك داخل لوحة التحكم</span></div></div>
+    <form class="quick-note-add" method="post" action="{{ url_for('dashboard_add_note') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><textarea name="note_text" required rows="3" maxlength="1000" placeholder="اكتب ملاحظة سريعة..."></textarea><button class="btn primary" type="submit">حفظ الملاحظة</button></form>
+    <div class="sticky-notes-grid">
+      {% for note in quick_notes %}<article class="sticky-note"><form method="post" action="{{ url_for('dashboard_update_note', note_id=note.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><textarea name="note_text" rows="4">{{ note.note_text }}</textarea><div><small>{{ note.updated_at or note.created_at }}</small><button class="btn small" type="submit">تحديث</button></div></form><form method="post" action="{{ url_for('dashboard_delete_note', note_id=note.id) }}" onsubmit="return confirm('حذف الملاحظة؟')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="note-delete">×</button></form></article>{% else %}<p class="empty-note">لا توجد ملاحظات. اكتب أول ملاحظة الآن.</p>{% endfor %}
+    </div>
+  </section>
+</div>
+
+<div class="dashboard-pro-grid">
+  <section class="panel dashboard-panel attention-panel"><div class="panel-head"><div><h2>🔔 ما يحتاج انتباهك</h2><span>التنبيهات والاعتمادات</span></div></div><div class="attention-list"><a href="{{ url_for('tasks_page') }}"><span>☑ مهام مفتوحة</span><b>{{ dashboard_open_tasks }}</b></a>{% if has_permission('view_approvals') %}<a href="{{ url_for('approvals_center') }}"><span>✓ اعتمادات معلقة</span><b>{{ pending_approvals }}</b></a>{% endif %}<a href="{{ url_for('notifications_page') }}"><span>🔔 إشعارات غير مقروءة</span><b>{{ unread_notification_count }}</b></a></div><div class="mini-notifications">{% for item in recent_notifications %}<a href="{{ url_for('open_notification', notification_id=item.id) }}"><strong>{{ item.title }}</strong><small>{{ item.created_at }}</small></a>{% else %}<p class="empty-note">لا توجد إشعارات حديثة.</p>{% endfor %}</div></section>
+  <section class="panel dashboard-panel"><div class="panel-head"><div><h2>⚡ إجراءات سريعة</h2><span>أكثر العمليات استخدامًا</span></div></div><div class="quick-action-grid">{% if has_permission('add_employees') %}<a href="{{ url_for('employees') }}">👤<span>الموظفون</span></a>{% endif %}{% if has_permission('add_revenue') %}<a href="{{ url_for('revenues') }}">💵<span>إضافة إيراد</span></a>{% endif %}{% if has_permission('add_expense') %}<a href="{{ url_for('expenses') }}">💸<span>إضافة مصروف</span></a>{% endif %}{% if has_permission('view_cashbox') %}<a href="{{ url_for('cashbox') }}">🏦<span>الخزينة</span></a>{% endif %}{% if has_permission('view_reports') %}<a href="{{ url_for('reports') }}">📊<span>تقرير اليوم</span></a>{% endif %}<a href="{{ url_for('attendance_portal') }}">🕒<span>بوابة الحضور</span></a></div></section>
+</div>
+
+{% if has_permission('view_audit') %}<section class="panel dashboard-panel activity-panel"><div class="panel-head"><div><h2>🕒 آخر العمليات</h2><span>أحدث الأنشطة داخل المنظومة</span></div><a class="text-link" href="{{ url_for('audit_page') }}">عرض الكل</a></div><div class="audit-timeline">{% for row in recent %}<div class="audit-item"><span class="audit-dot"></span><div><strong>{{ row.action }}</strong><p>{{ row.details or 'بدون تفاصيل إضافية' }}</p><small>{{ row.user_name }} — {{ row.created_at }}</small></div></div>{% else %}<p class="empty-note">لا توجد عمليات مسجلة.</p>{% endfor %}</div></section>{% endif %}
+{% endblock %}

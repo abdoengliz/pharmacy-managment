@@ -1,0 +1,95 @@
+{
+  "stage": 3,
+  "scope": "native PostgreSQL DDL and metadata introspection",
+  "counts": {
+    "AUTOINCREMENT": 4,
+    "PRAGMA": 14,
+    "sqlite_master": 4,
+    "INSERT_OR_IGNORE": 15,
+    "lastrowid": 29,
+    "scalar_MAX_zero": 5,
+    "scalar_MIN_zero": 0
+  },
+  "hits": [
+    {
+      "file": "app/db_compat.py",
+      "pattern": "AUTOINCREMENT",
+      "count": 4
+    },
+    {
+      "file": "app/db_compat.py",
+      "pattern": "PRAGMA",
+      "count": 13
+    },
+    {
+      "file": "app/db_compat.py",
+      "pattern": "sqlite_master",
+      "count": 3
+    },
+    {
+      "file": "app/db_compat.py",
+      "pattern": "lastrowid",
+      "count": 5
+    },
+    {
+      "file": "app/report_engine.py",
+      "pattern": "PRAGMA",
+      "count": 1
+    },
+    {
+      "file": "app/routes.py",
+      "pattern": "lastrowid",
+      "count": 18
+    },
+    {
+      "file": "app/routes.py",
+      "pattern": "scalar_MAX_zero",
+      "count": 4
+    },
+    {
+      "file": "app/core.py",
+      "pattern": "sqlite_master",
+      "count": 1
+    },
+    {
+      "file": "app/core.py",
+      "pattern": "INSERT_OR_IGNORE",
+      "count": 14
+    },
+    {
+      "file": "app/events/service.py",
+      "pattern": "lastrowid",
+      "count": 1
+    },
+    {
+      "file": "app/rules/service.py",
+      "pattern": "INSERT_OR_IGNORE",
+      "count": 1
+    },
+    {
+      "file": "app/notifications/service.py",
+      "pattern": "lastrowid",
+      "count": 1
+    },
+    {
+      "file": "app/tasks/service.py",
+      "pattern": "lastrowid",
+      "count": 1
+    },
+    {
+      "file": "app/sales/service.py",
+      "pattern": "lastrowid",
+      "count": 2
+    },
+    {
+      "file": "app/sales/service.py",
+      "pattern": "scalar_MAX_zero",
+      "count": 1
+    },
+    {
+      "file": "app/approvals/service.py",
+      "pattern": "lastrowid",
+      "count": 1
+    }
+  ]
+}

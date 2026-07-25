@@ -1,0 +1,10 @@
+{
+  "python_files": 18,
+  "route_endpoints": 124,
+  "template_url_for_uses": 225,
+  "missing_template_routes": [],
+  "html_forms": 108,
+  "forms_without_csrf": [],
+  "database_integrity": "ok",
+  "foreign_key_violations": 0
+}

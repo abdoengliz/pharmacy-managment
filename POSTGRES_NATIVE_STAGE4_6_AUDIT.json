@@ -1,0 +1,23 @@
+{
+  "stage": "4.6",
+  "baseline": "4.5",
+  "focus": "transaction reliability",
+  "changes": {
+    "request_teardown_rollback_on_exception": true,
+    "audit_optional_commit": true,
+    "critical_operations_using_audit_commit_false": 5,
+    "atomic_transaction_helper_added": true,
+    "atomic_helper_tests_passed": 2
+  },
+  "critical_operations_hardened": [
+    "create external debt",
+    "edit external debt",
+    "request/send treasury transfer",
+    "receive treasury transfer"
+  ],
+  "validation": {
+    "python_compileall": "passed",
+    "transaction_unit_tests": "2 passed",
+    "zip_integrity": "pending"
+  }
+}

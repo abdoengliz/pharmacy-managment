@@ -1,0 +1,51 @@
+{% extends 'base.html' %}{% block content %}
+<h1>الإيرادات اليومية</h1>
+{% if has_permission('add_revenue') %}
+<form method="post" class="panel grid-form" id="revenueForm"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>الفرع<select name="branch_id" required>{% for b in branches %}<option value="{{ b.id }}" {% if current_user.role!='admin' and current_user.branch_id==b.id %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select></label>
+<label>القيمة<input type="number" step="0.01" min="0" name="amount" required></label>
+<label>التاريخ<input type="date" name="revenue_date" value="{{ today }}" required></label>
+<label>عدد الفواتير الكلي لليوم<input type="number" min="0" step="1" name="invoice_count" required></label>
+<div class="wide split-box" data-split-form>
+<h3>تقسيم المبلغ على الحسابات</h3><div class="split-rows"></div>
+<button type="button" class="secondary add-split">+ إضافة حساب آخر</button>
+<p class="split-summary">المجموع: <strong class="split-total">0.00</strong> — المتبقي: <strong class="split-remaining">0.00</strong></p>
+</div>
+<div class="wide split-box employee-performance-box" data-employee-split-form>
+<h3>تقسيم المبلغ وعدد الفواتير على الموظفين</h3>
+<p class="muted">يُستخدم هذا التقسيم لتقييم أداء الموظفين فقط، وساعات العمل تُلتقط تلقائيًا من الحضور والانصراف.</p>
+<div class="employee-split-head"><span>الموظف</span><span>الإيراد</span><span>عدد الفواتير</span><span>إجراء</span></div>
+<div class="employee-split-rows"></div>
+<button type="button" class="secondary add-employee-split">+ إضافة موظف</button>
+<div class="employee-summary-grid">
+<p>الإيراد الموزع: <strong class="employee-amount-total">0.00</strong></p>
+<p>المتبقي من الإيراد: <strong class="employee-amount-remaining">0.00</strong></p>
+<p>الفواتير الموزعة: <strong class="employee-invoice-total">0</strong></p>
+<p>الفواتير المتبقية: <strong class="employee-invoice-remaining">0</strong></p>
+</div></div>
+<label class="wide">ملاحظات<input name="notes"></label><button class="wide">إضافة الإيراد</button>
+</form>{% endif %}
+<div class="table-wrap"><table><tr><th>التاريخ</th><th>الفرع</th><th>القيمة</th><th>عدد الفواتير</th><th>متوسط الفاتورة</th><th>الحساب المالي</th><th>المستخدم</th><th>ملاحظات</th><th>الإجراءات</th></tr>
+{% for r in rows %}<tr><td>{{ r.revenue_date }}</td><td>{{ r.branch_name }}</td><td>{{ '%.2f'|format(r.amount) }}</td><td>{{ r.invoice_count or 0 }}</td><td>{{ '%.2f'|format(r.average_invoice) }}</td><td>{{ r.payment_method }}</td><td>{{ r.creator }}</td><td>{{ r.notes or '-' }}</td><td class="actions">{% if has_permission('edit_revenue') %}<a href="{{ url_for('edit_revenue', revenue_id=r.id) }}">تعديل</a>{% endif %}{% if has_permission('delete_revenue') %}<form method="post" action="{{ url_for('delete_revenue', revenue_id=r.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف الإيراد؟')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-button">نقل إلى السلة</button></form>{% endif %}</td></tr>{% else %}<tr><td colspan="9">لا توجد إيرادات مسجلة.</td></tr>{% endfor %}</table></div>
+<script id="account-data" type="application/json">[{% for a in accounts %}{"id":{{a.id}},"branch_id":{{a.branch_id}},"name":{{a.name|tojson}}}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+<script id="employee-data" type="application/json">[{% for e in employees %}{"id":{{e.id}},"branch_id":{{e.branch_id or 0}},"name":{{(e.employee_no ~ ' - ' ~ e.full_name)|tojson}}}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+<script>
+const form=document.getElementById('revenueForm');
+if(form){
+ const amountInput=form.querySelector('[name="amount"]'), invoiceInput=form.querySelector('[name="invoice_count"]'), branchSelect=form.querySelector('[name="branch_id"]');
+ const accountData=JSON.parse(document.getElementById('account-data').textContent), employeeData=JSON.parse(document.getElementById('employee-data').textContent);
+ const accountBox=form.querySelector('[data-split-form]'), accountRows=accountBox.querySelector('.split-rows');
+ function fillAccounts(select){const branch=Number(branchSelect.value);select.innerHTML=accountData.filter(a=>a.branch_id===branch).map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}
+ function updateAccounts(){const total=Number(amountInput.value||0),used=[...accountRows.querySelectorAll('[name="split_amount"]')].reduce((s,i)=>s+Number(i.value||0),0);accountBox.querySelector('.split-total').textContent=used.toFixed(2);accountBox.querySelector('.split-remaining').textContent=(total-used).toFixed(2)}
+ function addAccount(){const row=document.createElement('div');row.className='split-row';row.innerHTML='<select name="split_account_id" required></select><input name="split_amount" type="number" min="0.01" step="0.01" placeholder="المبلغ" required><button type="button" class="danger-button">حذف</button>';accountRows.appendChild(row);fillAccounts(row.querySelector('select'));row.querySelector('input').oninput=updateAccounts;row.querySelector('button').onclick=()=>{if(accountRows.children.length>1){row.remove();updateAccounts()}}}
+ accountBox.querySelector('.add-split').onclick=addAccount;addAccount();
+ const empBox=form.querySelector('[data-employee-split-form]'), empRows=empBox.querySelector('.employee-split-rows');
+ function fillEmployees(select,selected=''){const branch=Number(branchSelect.value);select.innerHTML='<option value="">اختر الموظف</option>'+employeeData.filter(e=>e.branch_id===branch).map(e=>`<option value="${e.id}" ${String(e.id)===String(selected)?'selected':''}>${e.name}</option>`).join('')}
+ function updateEmployees(){const totalAmount=Number(amountInput.value||0),totalInvoices=Number(invoiceInput.value||0),usedAmount=[...empRows.querySelectorAll('[name="employee_amount"]')].reduce((s,i)=>s+Number(i.value||0),0),usedInvoices=[...empRows.querySelectorAll('[name="employee_invoice_count"]')].reduce((s,i)=>s+Number(i.value||0),0);empBox.querySelector('.employee-amount-total').textContent=usedAmount.toFixed(2);empBox.querySelector('.employee-amount-remaining').textContent=(totalAmount-usedAmount).toFixed(2);empBox.querySelector('.employee-invoice-total').textContent=usedInvoices;empBox.querySelector('.employee-invoice-remaining').textContent=totalInvoices-usedInvoices}
+ function addEmployee(){const row=document.createElement('div');row.className='employee-split-row';row.innerHTML='<select name="employee_id" required></select><input name="employee_amount" type="number" min="0" step="0.01" placeholder="الإيراد" required><input name="employee_invoice_count" type="number" min="0" step="1" placeholder="الفواتير" required><button type="button" class="danger-button">حذف</button>';empRows.appendChild(row);fillEmployees(row.querySelector('select'));row.querySelectorAll('input').forEach(i=>i.oninput=updateEmployees);row.querySelector('button').onclick=()=>{if(empRows.children.length>1){row.remove();updateEmployees()}}}
+ empBox.querySelector('.add-employee-split').onclick=addEmployee;addEmployee();
+ branchSelect.onchange=()=>{accountRows.querySelectorAll('select').forEach(fillAccounts);empRows.querySelectorAll('select').forEach(fillEmployees)};amountInput.oninput=()=>{updateAccounts();updateEmployees()};invoiceInput.oninput=updateEmployees;
+ form.onsubmit=e=>{const accountUsed=[...accountRows.querySelectorAll('[name="split_amount"]')].reduce((s,i)=>s+Number(i.value||0),0),empAmount=[...empRows.querySelectorAll('[name="employee_amount"]')].reduce((s,i)=>s+Number(i.value||0),0),empInvoices=[...empRows.querySelectorAll('[name="employee_invoice_count"]')].reduce((s,i)=>s+Number(i.value||0),0),ids=[...empRows.querySelectorAll('[name="employee_id"]')].map(i=>i.value);let msg='';if(Math.abs(Number(amountInput.value||0)-accountUsed)>.009)msg='مجموع تقسيم الحسابات لازم يساوي قيمة العملية.';else if(Math.abs(Number(amountInput.value||0)-empAmount)>.009)msg='مجموع إيراد الموظفين لازم يساوي إيراد اليوم.';else if(Number(invoiceInput.value||0)!==empInvoices)msg='مجموع فواتير الموظفين لازم يساوي عدد فواتير اليوم.';else if(new Set(ids).size!==ids.length)msg='لا يمكن إضافة نفس الموظف أكثر من مرة.';if(msg){e.preventDefault();alert(msg)}};
+}
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}{% block title %}إعدادات النظام{% endblock %}{% block content %}
+<div class="page-head"><div><h1>إعدادات النظام</h1><p>مركز موحّد لإدارة بيانات الشركة والمالية والضرائب والنسخ الاحتياطي والأمان والمظهر.</p></div></div>
+<div class="settings-layout" style="display:grid;grid-template-columns:minmax(190px,240px) 1fr;gap:18px;align-items:start">
+<aside class="panel" style="display:grid;gap:8px">
+  <a class="button-link" href="{{ url_for('settings_page',section='company') }}">🏢 بيانات الشركة</a>
+  <a class="button-link" href="{{ url_for('locations') }}">🏬 الفروع</a>
+  <a class="button-link" href="{{ url_for('code_generator') }}">🔢 الترقيم ومولد الأكواد</a>
+  <a class="button-link" href="{{ url_for('settings_page',section='financial') }}">💰 المالية</a>
+  <a class="button-link" href="{{ url_for('settings_page',section='taxes') }}">🧾 الضرائب</a>
+  <a class="button-link" href="{{ url_for('settings_page',section='backup') }}">💾 النسخ الاحتياطي</a>
+  <a class="button-link" href="{{ url_for('settings_page',section='notifications') }}">🔔 الإشعارات</a>
+  <a class="button-link" href="{{ url_for('settings_page',section='security') }}">🔒 الأمان</a>
+  <a class="button-link" href="{{ url_for('settings_page',section='appearance') }}">🎨 المظهر</a>
+  <a class="button-link" href="{{ url_for('system_version') }}">ℹ معلومات الإصدار</a>
+</aside>
+<div>
+{% if section == 'company' %}
+<section class="panel"><h2>بيانات الشركة</h2><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="section" value="company">
+<label>اسم الشركة<input name="company_name" value="{{ settings.get('company_name','') }}" required></label>
+<label>وصف النظام<input name="system_subtitle" value="{{ settings.get('system_subtitle','') }}"></label>
+<label>رقم الهاتف<input name="phone" value="{{ settings.get('phone','') }}"></label>
+<label>السجل التجاري<input name="commercial_registration" value="{{ settings.get('commercial_registration','') }}"></label>
+<label>الرقم الضريبي<input name="tax_number" value="{{ settings.get('tax_number','') }}"></label>
+<label class="full">العنوان<input name="address" value="{{ settings.get('address','') }}"></label>
+<div class="full"><button class="btn primary">حفظ بيانات الشركة</button></div></form></section>
+{% elif section == 'financial' %}
+<section class="panel"><h2>الإعدادات المالية</h2><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="section" value="financial">
+<label>العملة<input name="currency" value="{{ settings.get('currency','د.ل') }}" required></label>
+<label>عدد المنازل العشرية<input type="number" min="0" max="4" name="currency_decimals" value="{{ settings.get('currency_decimals','2') }}"></label>
+<label>بداية السنة المالية<input type="date" name="fiscal_year_start" value="{{ settings.get('fiscal_year_start','') }}"></label>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="allow_negative_balance" {% if settings.get('allow_negative_balance','0') == '1' %}checked{% endif %}> السماح بالرصيد السالب</label>
+<div class="full"><button class="btn primary">حفظ الإعدادات المالية</button></div></form></section>
+{% elif section == 'taxes' %}
+<section class="panel"><h2>الضرائب</h2><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="section" value="taxes">
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="tax_enabled" {% if settings.get('tax_enabled','0') == '1' %}checked{% endif %}> تفعيل الضرائب</label>
+<label>نسبة الضريبة الافتراضية %<input type="number" min="0" max="100" step="0.01" name="default_tax_rate" value="{{ settings.get('default_tax_rate','0') }}"></label>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="prices_include_tax" {% if settings.get('prices_include_tax','0') == '1' %}checked{% endif %}> الأسعار تشمل الضريبة</label>
+<label>مسمى الضريبة في الفاتورة<input name="tax_invoice_label" value="{{ settings.get('tax_invoice_label','ضريبة') }}"></label>
+<div class="full"><button class="btn primary">حفظ إعدادات الضرائب</button></div></form></section>
+{% elif section == 'notifications' %}
+<section class="panel"><h2>الإشعارات</h2><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="section" value="notifications">
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="notify_low_stock" {% if settings.get('notify_low_stock','1') == '1' %}checked{% endif %}> تنبيه انخفاض المخزون</label>
+<label>التنبيه قبل انتهاء الصلاحية بالأيام<input type="number" min="1" name="notify_expiry_days" value="{{ settings.get('notify_expiry_days','90') }}"></label>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="notify_pending_approvals" {% if settings.get('notify_pending_approvals','1') == '1' %}checked{% endif %}> تنبيه الاعتمادات المعلقة</label>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="notify_unpaid_payroll" {% if settings.get('notify_unpaid_payroll','1') == '1' %}checked{% endif %}> تنبيه الرواتب غير المصروفة</label>
+<div class="full"><button class="btn primary">حفظ إعدادات الإشعارات</button></div></form></section>
+{% elif section == 'security' %}
+<section class="panel"><h2>الأمان</h2><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="section" value="security">
+<label>انتهاء الجلسة بعد (دقيقة)<input type="number" min="5" name="session_timeout_minutes" value="{{ settings.get('session_timeout_minutes','60') }}"></label>
+<label>الحد الأدنى لطول كلمة المرور<input type="number" min="6" name="password_min_length" value="{{ settings.get('password_min_length','8') }}"></label>
+<label>حد محاولات تسجيل الدخول<input type="number" min="3" name="login_attempt_limit" value="{{ settings.get('login_attempt_limit','5') }}"></label>
+<label>الاحتفاظ بسجل النشاط (يوم)<input type="number" min="30" name="audit_retention_days" value="{{ settings.get('audit_retention_days','365') }}"></label>
+<div class="full"><button class="btn primary">حفظ إعدادات الأمان</button></div></form><p class="muted">هذه القيم أصبحت مركزية وجاهزة لربطها بسياسات تسجيل الدخول في المرحلة الأمنية التالية.</p></section>
+{% elif section == 'appearance' %}
+<section class="panel"><h2>المظهر</h2><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="section" value="appearance">
+<label>المظهر الافتراضي<select name="default_theme"><option value="system" {% if settings.get('default_theme','system')=='system' %}selected{% endif %}>حسب النظام</option><option value="light" {% if settings.get('default_theme')=='light' %}selected{% endif %}>فاتح</option><option value="dark" {% if settings.get('default_theme')=='dark' %}selected{% endif %}>داكن</option></select></label>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="sidebar_compact" {% if settings.get('sidebar_compact','0') == '1' %}checked{% endif %}> قائمة جانبية مختصرة</label>
+<label>تحديث لوحة التحكم كل (دقيقة)<input type="number" min="1" name="dashboard_refresh_minutes" value="{{ settings.get('dashboard_refresh_minutes','5') }}"></label>
+<div class="full"><button class="btn primary">حفظ إعدادات المظهر</button></div></form><p class="muted">سيتم تطبيق التفضيلات العامة تدريجيًا، مع بقاء زر الوضع الليلي الحالي متاحًا للمستخدم.</p></section>
+{% elif section == 'backup' %}
+<section class="panel"><h2>النسخ الاحتياطي</h2><p>أنشئ نسخة من قاعدة البيانات واحفظها خارج جهاز التشغيل أيضًا.</p>
+<form method="post" action="{{ url_for('create_backup') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn primary" type="submit">إنشاء وتنزيل نسخة احتياطية</button></form>
+<hr><h3>آخر النسخ داخل البرنامج</h3>{% if backups %}<div class="backup-list">{% for file in backups %}<a href="{{ url_for('download_backup', filename=file.name) }}">{{ file.name }}</a>{% endfor %}</div>{% else %}<p class="muted">لا توجد نسخ بعد.</p>{% endif %}</section>
+{% endif %}
+</div></div>
+{% endblock %}

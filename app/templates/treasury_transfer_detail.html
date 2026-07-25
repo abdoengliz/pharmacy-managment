@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}تفاصيل التوريد المالي{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ transfer.transfer_number }}</h1><p>توريد أو تحويل مالي بين الخزائن</p></div><span class="status {{ transfer.status|lower }}">{{ status_labels.get(transfer.status,transfer.status) }}</span></div>
+<div class="cards stats">
+<div class="card"><span>من</span><b>{{ transfer.from_location }}</b><small>{{ transfer.from_account }}</small></div>
+<div class="card"><span>إلى</span><b>{{ transfer.to_location }}</b><small>{{ transfer.to_account }}</small></div>
+<div class="card positive"><span>المبلغ</span><b>{{ '%.2f'|format(transfer.amount) }}</b><small>د.ل</small></div>
+<div class="card"><span>التاريخ</span><b>{{ transfer.transfer_date }}</b><small>{{ transfer.creator }}</small></div>
+</div>
+<section class="panel"><div class="summary-list"><div><span>أنشأ بواسطة</span><b>{{ transfer.creator }}</b></div><div><span>أرسل بواسطة</span><b>{{ transfer.sender or '—' }}</b></div><div><span>استلم بواسطة</span><b>{{ transfer.receiver or '—' }}</b></div><div><span>ملاحظات</span><b>{{ transfer.notes or '—' }}</b></div></div>
+<div class="actions treasury-actions">
+{% if transfer.status!='CANCELLED' and has_permission('create_treasury_transfers') %}<a class="button-link" href="{{ url_for('edit_treasury_transfer',transfer_id=transfer.id) }}">تعديل</a><form method="post" action="{{ url_for('delete_treasury_transfer',transfer_id=transfer.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا التحويل؟ سيتم عكس أثره المالي إن كان مستلمًا، ولا يمكن التراجع.')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="danger-button">حذف</button></form>{% endif %}
+{% if transfer.status=='DRAFT' and has_permission('create_treasury_transfers') %}<form method="post" action="{{ url_for('send_treasury_transfer',transfer_id=transfer.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>إرسال للمستلم</button></form>{% endif %}
+{% if transfer.status=='SENT' and has_permission('receive_treasury_transfers') %}<form method="post" action="{{ url_for('receive_treasury_transfer',transfer_id=transfer.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>تأكيد الاستلام ونقل الرصيد</button></form>{% endif %}
+{% if transfer.status in ['DRAFT','SENT'] and has_permission('create_treasury_transfers') %}<form method="post" action="{{ url_for('cancel_treasury_transfer',transfer_id=transfer.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-button">إلغاء التحويل</button></form>{% endif %}
+<a class="button-link" href="{{ url_for('treasury_center') }}">الرجوع للخزائن</a>
+</div></section>
+{% endblock %}

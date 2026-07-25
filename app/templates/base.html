@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app_settings.get("company_name", "صيدلي ERP") }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="{% if current_user %}app-focus-mode{% endif %}">
+{% if current_user %}
+<div class="app-shell">
+  <div class="app-menu-backdrop" id="appMenuBackdrop" aria-hidden="true"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">Rx</div><div><strong>{{ app_settings.get("company_name", "صيدلي ERP") }}</strong><small>{{ app_settings.get("system_subtitle", "الإدارة المالية") }} · {{ app_settings.get("system_version", "5.0.0-dev") }}</small></div></div>
+    <nav>
+      {% if has_permission('view_dashboard') %}<a href="{{ url_for('dashboard') }}">⌂ <span>مركز القيادة</span></a>{% endif %}
+      {% if has_permission('view_revenue') %}<a href="{{ url_for('revenues') }}">＋ <span>الإيرادات</span></a>{% endif %}
+      {% if has_permission('view_expenses') %}<a href="{{ url_for('expenses') }}">− <span>المصروفات</span></a>{% endif %}
+      {% if has_permission('view_main_treasury') or has_permission('view_branch_treasuries') %}<a href="{{ url_for('treasury_center') }}">🏛️ <span>الخزينة الرئيسية والفروع</span></a>{% endif %}{% if has_permission('view_cashbox') %}<a href="{{ url_for('financial_balances') }}">▦ <span>ملخص الأرصدة</span></a><a href="{{ url_for('cashbox') }}">▣ <span>الحسابات والأرصدة</span></a><a href="{{ url_for('financial_accounts') }}">🏦 <span>الحسابات المالية</span></a>{% endif %}
+      {% if has_permission('view_external_debts') %}<a href="{{ url_for('external_debts') }}">💳 <span>الديون الخارجية</span></a>{% endif %}
+      {% if has_permission('view_suppliers') %}<a href="{{ url_for('suppliers') }}">♙ <span>الموردون</span></a><a href="{{ url_for('payments') }}">✓ <span>السدادات</span></a>{% endif %}
+      {% if has_permission('view_reports') %}<a href="{{ url_for('reports') }}">▥ <span>التقارير</span></a>{% endif %}
+      {% if has_permission('view_financial_reports') %}<a href="{{ url_for('financial_reports', report_name='balance-sheet') }}">📈 <span>التقارير المالية</span></a>{% endif %}
+      {% if has_permission('view_approvals') %}<a href="{{ url_for('approvals_center') }}">✓ <span>مركز الاعتمادات</span></a>{% endif %}
+      <a href="{{ url_for('tasks_page') }}">☑ <span>المهام{% if open_task_count %} <b class="side-count">{{ open_task_count }}</b>{% endif %}</span></a>
+      <a href="{{ url_for('notifications_page') }}">🔔 <span>الإشعارات{% if unread_notification_count %} <b class="side-count">{{ unread_notification_count }}</b>{% endif %}</span></a>
+      {% if has_permission('manage_users') %}<a href="{{ url_for('system_management') }}">🛠 <span>إدارة النظام</span></a>{% endif %}{% if has_permission('view_workflows') %}<a href="{{ url_for('workflows_page') }}">⇢ <span>سير العمل</span></a>{% endif %}
+      {% if has_permission('view_employees') %}<a href="{{ url_for('employees') }}">👥 <span>الموظفون</span></a>{% endif %}
+      {% if has_permission('view_audit') %}<a href="{{ url_for('audit_page') }}">◷ <span>مركز التدقيق</span></a>{% endif %}{% if has_permission('view_event_history') %}<a href="{{ url_for('event_history_page') }}">⚡ <span>مستكشف الأحداث</span></a>{% endif %}{% if has_permission('view_error_center') %}<a href="{{ url_for('error_center_page') }}">⚠ <span>مركز الأخطاء</span></a>{% endif %}
+      {% if has_permission('manage_trash') %}<a href="{{ url_for('trash_page') }}">🗑️ <span>سلة المحذوفات</span></a>{% endif %}
+      {% if has_permission('manage_system_policies') %}<a href="{{ url_for('system_policies_page') }}">⚖ <span>سياسات النظام</span></a>{% endif %}{% if has_permission('manage_settings') %}<a href="{{ url_for('system_health') }}">🩺 <span>صحة النظام</span></a><a href="{{ url_for('settings_page') }}">⚙ <span>الإعدادات</span></a>{% endif %}
+    </nav>
+    <div class="sidebar-user"><strong>{{ current_user.full_name }}</strong><small>{{ 'مدير النظام' if current_user.role=='admin' else 'مستخدم' }}</small><a href="{{ url_for('logout') }}">تسجيل الخروج</a></div>
+  </aside>
+  <section class="main-area">
+    <header class="topbar"><button class="icon-btn app-menu-toggle" id="appMenuToggle" type="button" title="القائمة الرئيسية (F12)" aria-label="فتح القائمة الرئيسية" aria-expanded="false">☰</button><div class="top-title">{{ app_settings.get("company_name", "نظام الإدارة المالية للصيدليات") }}</div><form class="global-search" method="get" action="{{ url_for('global_search') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="search" name="q" value="{{ request.args.get('q', '') if request.endpoint == 'global_search' else '' }}" placeholder="ابحث عن مورد، مستخدم، موظف أو عملية مالية..." minlength="2" required><button type="submit" title="بحث">⌕</button></form><div class="top-actions"><details class="notification-menu"><summary class="icon-btn bell-btn" title="الإشعارات">🔔{% if unread_notification_count %}<span class="bell-count">{{ unread_notification_count }}</span>{% endif %}</summary><div class="notification-dropdown"><div class="notification-head"><strong>الإشعارات</strong><form method="post" action="{{ url_for('notifications_read_all') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="link-btn">تحديد الكل كمقروء</button></form></div>{% for n in top_notifications %}<a class="notification-item {{ 'unread' if not n.is_read else '' }}" href="{{ url_for('open_notification', notification_id=n.id) }}"><strong>{{ n.title }}</strong><span>{{ n.message }}</span><small>{{ n.created_at }}</small></a>{% else %}<div class="empty-note">لا توجد إشعارات.</div>{% endfor %}<a class="all-link" href="{{ url_for('notifications_page') }}">عرض كل الإشعارات</a></div></details><a class="icon-btn task-btn" href="{{ url_for('tasks_page') }}" title="المهام">☑{% if open_task_count %}<span class="bell-count">{{ open_task_count }}</span>{% endif %}</a><button class="icon-btn" id="themeToggle" title="الوضع الليلي">◐</button></div></header>
+    <main class="container">
+      {% for category, message in get_flashed_messages(with_categories=true) %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}
+      {% block content %}{% endblock %}
+    </main>
+  </section>
+</div>
+{% else %}<main class="container">{% for category, message in get_flashed_messages(with_categories=true) %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{{ self.content() }}</main>{% endif %}
+<script>
+const root=document.documentElement, saved=localStorage.getItem('theme')||'light'; root.dataset.theme=saved;
+const btn=document.getElementById('themeToggle'); if(btn) btn.onclick=()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';localStorage.setItem('theme',root.dataset.theme)};
+document.addEventListener('keydown',(event)=>{
+  if(event.key==='F8' && {{ 'true' if current_user else 'false' }}){
+    event.preventDefault();
+    const dirty = document.body.classList.contains('sales-focus-mode') && document.querySelector('#invoiceItems tr[data-item-row]');
+    if(!dirty || confirm('لديك فاتورة غير محفوظة، هل تريد تسجيل الخروج؟')) window.location.href={{ url_for('logout')|tojson }};
+  }
+},true);
+const appFocus=document.body.classList.contains('app-focus-mode');
+const appSidebar=document.getElementById('sidebar');
+const appBackdrop=document.getElementById('appMenuBackdrop');
+const appMenuToggle=document.getElementById('appMenuToggle');
+function setAppMenu(open){
+  if(!appFocus||!appSidebar)return;
+  document.body.classList.toggle('app-menu-open',open);
+  appSidebar.classList.toggle('open',open);
+  if(appBackdrop)appBackdrop.setAttribute('aria-hidden',open?'false':'true');
+  if(appMenuToggle)appMenuToggle.setAttribute('aria-expanded',open?'true':'false');
+}
+if(appFocus){
+  if(appMenuToggle)appMenuToggle.addEventListener('click',()=>setAppMenu(!document.body.classList.contains('app-menu-open')));
+  document.addEventListener('keydown',(event)=>{
+    if(event.key==='F12'){
+      event.preventDefault();
+      event.stopPropagation();
+      setAppMenu(!document.body.classList.contains('app-menu-open'));
+    }else if(event.key==='Escape'){
+      setAppMenu(false);
+    }
+  },true);
+  if(appBackdrop)appBackdrop.addEventListener('click',()=>setAppMenu(false));
+  appSidebar.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>setAppMenu(false)));
+}
+</script>
+</body></html>

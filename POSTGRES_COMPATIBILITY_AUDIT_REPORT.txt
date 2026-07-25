@@ -1,0 +1,38 @@
+PostgreSQL compatibility audit
+GROUP_CONCAT: 0 (handled by db_compat where applicable)
+AUTOINCREMENT: 59 (handled by db_compat where applicable)
+   app/db_compat.py:145
+   app/db_compat.py:204
+   app/core.py:107
+   app/core.py:112
+   app/core.py:131
+   app/core.py:145
+   app/core.py:158
+   app/core.py:169
+INSERT OR IGNORE: 15 (handled by db_compat where applicable)
+   app/core.py:764
+   app/core.py:794
+   app/core.py:805
+   app/core.py:1013
+   app/core.py:1015
+   app/core.py:1017
+   app/core.py:1019
+   app/core.py:1022
+SQLite date modifier: 3 (handled by db_compat where applicable)
+   app/routes.py:1430
+   app/db_compat.py:191
+   app/core.py:1110
+sqlite_master: 4 (handled by db_compat where applicable)
+   app/routes.py:447
+   app/db_compat.py:174
+   app/db_compat.py:177
+   app/core.py:1210
+PRAGMA: 28 (handled by db_compat where applicable)
+   app/routes.py:459
+   app/routes.py:4298
+   app/db_compat.py:154
+   app/db_compat.py:156
+   app/db_compat.py:159
+   app/db_compat.py:250
+   app/db_compat.py:251
+   app/db_compat.py:252

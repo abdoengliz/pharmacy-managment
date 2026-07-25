@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}بوابة الحضور والانصراف{% endblock %}
+{% block content %}
+<div class="attendance-portal-page">
+  <section class="attendance-portal-card">
+    <a class="attendance-back" href="{{ url_for('login') }}">← الرجوع لتسجيل الدخول</a>
+    <div class="attendance-logo">🕒</div>
+    <h1>حضور وانصراف الموظفين</h1>
+    <p>اختر اسمك من القائمة ثم أدخل الرمز السري.</p>
+    {% if result %}
+    <div class="attendance-success" id="attendanceSuccess">
+      <strong>✓ تم تسجيل {{ result.operation }} بنجاح</strong>
+      <span>{{ result.employee_name }}</span>
+      <b>{{ result.time }}</b>
+    </div>
+    {% else %}
+    <form method="post" class="attendance-form" autocomplete="off" id="attendanceForm"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>الموظف
+        <div class="employee-combobox" id="employeeCombobox">
+          <input type="search" id="employeeSearch" required autofocus autocomplete="off"
+                 placeholder="ابحث بالاسم أو كود الموظف" role="combobox"
+                 aria-expanded="false" aria-controls="employeeOptions">
+          <input type="hidden" name="employee_id" id="employeeId">
+          <input type="hidden" name="employee_identifier" id="employeeIdentifier">
+          <button type="button" class="employee-combobox-toggle" id="employeeToggle" aria-label="عرض قائمة الموظفين">⌄</button>
+          <div class="employee-options" id="employeeOptions" role="listbox" hidden>
+            {% for employee in portal_employees %}
+              {% set code = employee.employee_code or employee.employee_no or ('EMP-' ~ employee.id) %}
+              <button type="button" class="employee-option" role="option"
+                      data-id="{{ employee.id }}" data-name="{{ employee.full_name }}"
+                      data-code="{{ code }}" data-search="{{ (code ~ ' ' ~ employee.full_name)|lower }}">
+                <strong>{{ employee.full_name }}</strong>
+                <span>{{ code }}</span>
+              </button>
+            {% else %}
+              <div class="employee-options-empty">لا يوجد موظفون مفعّلون في بوابة الحضور.</div>
+            {% endfor %}
+            <div class="employee-no-results" id="employeeNoResults" hidden>لا توجد نتائج مطابقة.</div>
+          </div>
+        </div>
+      </label>
+      <label>الرمز السري
+        <input type="password" name="pin" id="attendancePin" required inputmode="numeric" pattern="[0-9]{4,8}" maxlength="8" autocomplete="off" placeholder="••••">
+      </label>
+      <div class="attendance-actions">
+        <button type="submit" name="action" value="check_in" class="attendance-in">تسجيل حضور</button>
+        <button type="submit" name="action" value="check_out" class="attendance-out">تسجيل انصراف</button>
+      </div>
+    </form>
+    {% endif %}
+  </section>
+</div>
+{% if result %}
+<script>setTimeout(()=>{window.location.href={{ url_for('attendance_portal')|tojson }}},3000);</script>
+{% else %}
+<style>
+.employee-combobox{position:relative;margin-top:7px}.employee-combobox>input[type=search]{padding-left:46px;margin-top:0}.employee-combobox-toggle{position:absolute;left:5px;top:5px;width:38px;height:38px;border:0;background:transparent;font-size:24px;cursor:pointer;color:inherit}.employee-options{position:absolute;z-index:50;top:calc(100% + 6px);right:0;left:0;max-height:270px;overflow:auto;background:var(--panel,#fff);border:1px solid rgba(120,130,150,.28);border-radius:12px;box-shadow:0 14px 35px rgba(20,30,50,.18);padding:6px}.employee-option{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:right;border:0;background:transparent;padding:11px 12px;border-radius:9px;cursor:pointer;color:inherit}.employee-option:hover,.employee-option:focus{background:rgba(39,110,241,.10);outline:none}.employee-option span{font-size:.82rem;opacity:.68;direction:ltr}.employee-options-empty,.employee-no-results{padding:16px;text-align:center;opacity:.7}
+</style>
+<script>
+(() => {
+  const box = document.getElementById('employeeCombobox');
+  const search = document.getElementById('employeeSearch');
+  const employeeId = document.getElementById('employeeId');
+  const identifier = document.getElementById('employeeIdentifier');
+  const options = document.getElementById('employeeOptions');
+  const toggle = document.getElementById('employeeToggle');
+  const pin = document.getElementById('attendancePin');
+  const form = document.getElementById('attendanceForm');
+  const rows = [...options.querySelectorAll('.employee-option')];
+  const noResults = document.getElementById('employeeNoResults');
+
+  function openList() { options.hidden = false; search.setAttribute('aria-expanded','true'); filter(); }
+  function closeList() { options.hidden = true; search.setAttribute('aria-expanded','false'); }
+  function filter() {
+    const term = search.value.trim().toLowerCase();
+    let visible = 0;
+    rows.forEach(row => {
+      const show = !term || row.dataset.search.includes(term);
+      row.hidden = !show;
+      if (show) visible++;
+    });
+    if (noResults) noResults.hidden = visible !== 0;
+  }
+  function choose(row) {
+    employeeId.value = row.dataset.id;
+    identifier.value = row.dataset.code;
+    search.value = `${row.dataset.name} — ${row.dataset.code}`;
+    closeList();
+    pin.focus();
+  }
+
+  search.addEventListener('focus', openList);
+  search.addEventListener('input', () => { employeeId.value=''; identifier.value=search.value.trim(); openList(); });
+  toggle.addEventListener('click', () => { options.hidden ? openList() : closeList(); search.focus(); });
+  rows.forEach(row => row.addEventListener('click', () => choose(row)));
+  document.addEventListener('click', event => { if (!box.contains(event.target)) closeList(); });
+  search.addEventListener('keydown', event => { if (event.key === 'Escape') closeList(); });
+  form.addEventListener('submit', event => {
+    if (!employeeId.value) {
+      event.preventDefault();
+      openList();
+      search.focus();
+      search.setCustomValidity('اختر الموظف من القائمة.');
+      search.reportValidity();
+    }
+  });
+  search.addEventListener('change', () => search.setCustomValidity(''));
+})();
+</script>
+{% endif %}
+{% endblock %}

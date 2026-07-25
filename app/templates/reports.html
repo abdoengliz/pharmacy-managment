@@ -1,0 +1,31 @@
+{% extends 'base.html' %}{% block content %}
+<div class="page-head"><div><h1>التقارير</h1><p>اعرض البيانات وصدّرها إلى PDF أو Word أو Excel.</p></div></div>
+<form class="card filter-form" method="get"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div><label>من تاريخ</label><input type="date" name="start_date" value="{{ start_date }}"></div>
+  <div><label>إلى تاريخ</label><input type="date" name="end_date" value="{{ end_date }}"></div>
+  <div><label>الموقع</label><select name="location_id"><option value="">جميع المواقع</option>{% for b in locations %}<option value="{{ b.id }}" {% if selected_location==b.id %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select></div>
+  <div class="form-actions"><button class="btn primary">عرض التقرير</button></div>
+</form>
+
+{% macro export_buttons(kind) %}
+<div class="export-actions">
+  <a class="btn" href="{{ url_for('export_report', report_type=kind, file_format='pdf', start_date=start_date, end_date=end_date, location_id=selected_location or '') }}">PDF</a>
+  <a class="btn" href="{{ url_for('export_report', report_type=kind, file_format='docx', start_date=start_date, end_date=end_date, location_id=selected_location or '') }}">Word</a>
+  <a class="btn" href="{{ url_for('export_report', report_type=kind, file_format='xlsx', start_date=start_date, end_date=end_date, location_id=selected_location or '') }}">Excel</a>
+</div>
+{% endmacro %}
+
+<section class="card report-section"><div class="section-head"><div><h2>الإيرادات</h2><p>الإجمالي: {{ '%.2f'|format(totals.revenues) }} {{ app_settings.get('currency','د.ل') }}</p></div>{{ export_buttons('revenues') }}</div>
+<div class="table-wrap"><table><tr><th>التاريخ</th><th>الموقع</th><th>القيمة</th><th>الحسابات</th><th>الملاحظات</th><th>المستخدم</th></tr>{% for r in revenues_rows %}<tr><td>{{ r.report_date }}</td><td>{{ r.location_name }}</td><td>{{ '%.2f'|format(r.amount) }}</td><td>{{ r.payment_method }}</td><td>{{ r.notes }}</td><td>{{ r.creator }}</td></tr>{% else %}<tr><td colspan="6">لا توجد بيانات.</td></tr>{% endfor %}</table></div></section>
+
+<section class="card report-section"><div class="section-head"><div><h2>المصروفات</h2><p>الإجمالي: {{ '%.2f'|format(totals.expenses) }} {{ app_settings.get('currency','د.ل') }}</p><p>تشغيلية: {{ '%.2f'|format(totals.operating_expenses) }} — أصول: {{ '%.2f'|format(totals.assets) }} — التزامات: {{ '%.2f'|format(totals.liabilities) }}</p></div>{{ export_buttons('expenses') }}</div>
+<div class="table-wrap"><table><tr><th>التاريخ</th><th>الموقع</th><th>نوع المصروف</th><th>التصنيف المالي</th><th>نوع الأصل</th><th>القيمة</th><th>الحسابات</th><th>الملاحظات</th><th>المستخدم</th></tr>{% for r in expenses_rows %}<tr><td>{{ r.report_date }}</td><td>{{ r.location_name }}</td><td>{{ r.category }}</td><td>{{ financial_classifications.get(r.financial_classification,r.financial_classification) }}</td><td>{{ asset_types.get(r.asset_type,r.asset_type) if r.asset_type else '-' }}</td><td>{{ '%.2f'|format(r.amount) }}</td><td>{{ r.payment_method }}</td><td>{{ r.notes }}</td><td>{{ r.creator }}</td></tr>{% else %}<tr><td colspan="9">لا توجد بيانات.</td></tr>{% endfor %}</table></div></section>
+
+<section class="card report-section"><div class="section-head"><div><h2>سدادات الموردين</h2><p>الإجمالي: {{ '%.2f'|format(totals.payments) }} {{ app_settings.get('currency','د.ل') }}</p></div>{{ export_buttons('payments') }}</div>
+<div class="table-wrap"><table><tr><th>التاريخ</th><th>الموقع</th><th>المورد</th><th>القيمة</th><th>الحسابات</th><th>الملاحظات</th><th>المستخدم</th></tr>{% for r in payments_rows %}<tr><td>{{ r.report_date }}</td><td>{{ r.location_name }}</td><td>{{ r.supplier_name }}</td><td>{{ '%.2f'|format(r.amount) }}</td><td>{{ r.payment_method }}</td><td>{{ r.notes }}</td><td>{{ r.creator }}</td></tr>{% else %}<tr><td colspan="7">لا توجد بيانات.</td></tr>{% endfor %}</table></div></section>
+
+<section class="card report-section"><div class="section-head"><div><h2>الديون الخارجية</h2><p>تقرير الديون لنا وعلينا.</p></div>{{ export_buttons('external_debts') }}</div><p>التفاصيل الكاملة متاحة من صفحة الديون الخارجية.</p></section>
+
+<section class="card report-section"><div class="section-head"><div><h2>الحسابات المالية</h2><p>رصيد كل حساب حسب الموقع.</p></div>{{ export_buttons('accounts') }}</div>
+<div class="table-wrap"><table><tr><th>الموقع</th><th>الحساب</th><th>النوع</th><th>الرصيد</th></tr>{% for r in accounts_rows %}<tr><td>{{ r.location_name }}</td><td>{{ r.account_name }}</td><td>{{ r.account_type }}</td><td>{{ '%.2f'|format(r.balance) }}</td></tr>{% else %}<tr><td colspan="4">لا توجد بيانات.</td></tr>{% endfor %}</table></div></section>
+{% endblock %}

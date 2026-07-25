@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}الإشعارات{% endblock %}{% block content %}
+<div class="page-head"><div><h1>🔔 مركز الإشعارات</h1><p>كل التنبيهات المتعلقة بالفواتير والنظام.</p></div><form method="post" action="{{ url_for('notifications_read_all') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn secondary">تحديد الكل كمقروء</button></form></div>
+<div class="panel notification-list">{% for n in rows %}<a class="notification-row {{ 'unread' if not n.is_read else '' }}" href="{{ url_for('open_notification', notification_id=n.id) }}"><div><strong>{{ n.title }}</strong><p>{{ n.message }}</p></div><div><span class="badge {{ n.notification_type|lower }}">{{ n.priority }}</span><small>{{ n.created_at }}</small></div></a>{% else %}<div class="empty-note">لا توجد إشعارات حتى الآن.</div>{% endfor %}</div>
+{% endblock %}

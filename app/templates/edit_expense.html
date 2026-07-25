@@ -1,0 +1,17 @@
+{% extends 'base.html' %}{% block content %}
+<h1>تعديل المصروف</h1>
+<form method="post" class="panel grid-form" data-edit-split-form><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>الفرع<select name="branch_id" required>{% for b in branches %}<option value="{{ b.id }}" {% if b.id == row.branch_id %}selected{% endif %}>{{ b.name }}</option>{% endfor %}</select></label>
+<label>القيمة<input type="number" name="amount" step="0.01" min="0.01" value="{{ row.amount }}" required></label>
+<label>التاريخ<input type="date" name="expense_date" value="{{ row.expense_date }}" required></label>
+<label>التصنيف<input name="category" value="{{ row.category }}" required></label>
+<label>التصنيف المالي<select name="financial_classification" id="financialClassification" required>{% for key,label in financial_classifications.items() %}<option value="{{ key }}" {% if row.financial_classification==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label id="assetTypeField">نوع الأصل<select name="asset_type" id="assetType">{% for key,label in asset_types.items() %}<option value="{{ key }}" {% if row.asset_type==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<div class="wide split-box"><h3>تقسيم المبلغ على الحسابات</h3><div class="split-rows"></div><button type="button" class="secondary add-split">+ إضافة حساب آخر</button><p class="split-summary">المجموع: <strong class="split-total">0.00</strong> — المتبقي: <strong class="split-remaining">0.00</strong></p></div>
+<label class="wide">ملاحظات<input name="notes" value="{{ row.notes or '' }}"></label><button>حفظ التعديل</button><a class="button-link" href="{{ url_for('expenses') }}">إلغاء</a>
+</form>
+<script id="account-data" type="application/json">[{% for a in accounts %}{"id":{{a.id}},"branch_id":{{a.branch_id}},"name":{{a.name|tojson}}}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+<script id="current-splits" type="application/json">[{% for s in current_splits %}{"account_id":{{s.account_id}},"amount":{{s.amount}}}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+{% include '_edit_split_script.html' %}
+<script>const fc=document.getElementById('financialClassification'),af=document.getElementById('assetTypeField'),at=document.getElementById('assetType');function refreshAsset(){const show=fc.value==='ASSET';af.style.display=show?'block':'none';at.required=show;}fc.addEventListener('change',refreshAsset);refreshAsset();</script>
+{% endblock %}

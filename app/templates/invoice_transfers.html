@@ -1,0 +1,12 @@
+{% extends 'base.html' %}{% block title %}تحويلات الفواتير{% endblock %}{% block content %}
+<div class="page-head"><div><h1>تحويلات الفواتير</h1><p>نقل الفاتورة كاملة بين المخزن الرئيسي والفروع أو بالعكس.</p></div></div>
+<section class="panel"><h2>إنشاء تحويل فاتورة</h2><form method="post" class="form-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>من موقع<select name="from_location_id" required>{% for x in locations %}<option value="{{x.id}}">{{x.name}}</option>{% endfor %}</select></label>
+<label>إلى موقع<select name="to_location_id" required>{% for x in locations %}<option value="{{x.id}}">{{x.name}}</option>{% endfor %}</select></label>
+<label>رقم الفاتورة<input name="invoice_number" required></label><label>اسم المورد<input name="supplier_name"></label>
+<label>تاريخ الفاتورة<input type="date" name="invoice_date" value="{{today}}" required></label>
+<label>قيمة الفاتورة<input type="number" step="0.01" min="0" name="total_amount" value="0" required></label>
+<label>تاريخ التحويل<input type="date" name="transfer_date" value="{{today}}" required></label>
+<label class="full">ملاحظات<textarea name="notes"></textarea></label><button>حفظ كمسودة</button></form></section>
+<div class="table-wrap"><table><thead><tr><th>رقم التحويل</th><th>الفاتورة</th><th>المورد</th><th>من</th><th>إلى</th><th>القيمة</th><th>الحالة</th><th></th></tr></thead><tbody>{% for r in rows %}<tr><td>{{r.transfer_number}}</td><td>{{r.invoice_number}}</td><td>{{r.supplier_name or '-'}}</td><td>{{r.from_name}}</td><td>{{r.to_name}}</td><td>{{'%.2f'|format(r.total_amount)}}</td><td><span class="status {{r.status|lower}}">{{ {'DRAFT':'مسودة','SENT':'مرسلة','RECEIVED':'مستلمة','CANCELLED':'ملغاة'}[r.status] }}</span></td><td><a class="button-link" href="{{url_for('invoice_transfer_detail',transfer_id=r.id)}}">فتح</a></td></tr>{% else %}<tr><td colspan="8" class="empty">لا توجد تحويلات فواتير.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

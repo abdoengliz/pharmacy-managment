@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}سياسات النظام{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>سياسات النظام</h1><p>تحكم مركزي في قواعد العمل مع سجل كامل لكل تغيير.</p></div></div>
+<div class="panel">
+<form method="get" class="filters-grid"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>البحث<input type="search" name="q" value="{{ search }}" placeholder="اسم السياسة أو المفتاح"></label>
+  <label>التصنيف<select name="category"><option value="">كل التصنيفات</option>{% for key,label in categories.items() %}<option value="{{ key }}" {{ 'selected' if selected_category==key else '' }}>{{ label }}</option>{% endfor %}</select></label>
+  <div class="form-actions"><button type="submit">تصفية</button><a class="button-link secondary" href="{{ url_for('system_policies_page') }}">مسح</a></div>
+</form>
+</div>
+<div class="panel"><h2>القواعد النشطة</h2>
+<div class="table-wrap"><table><thead><tr><th>التصنيف</th><th>السياسة</th><th>القيمة</th><th>الوصف</th><th>آخر تعديل</th><th>إجراء</th></tr></thead><tbody>
+{% for row in rows %}<tr>
+<td>{{ categories.get(row.category,row.category) }}</td><td><strong>{{ row.name }}</strong><small style="display:block">{{ row.rule_key }}</small></td>
+<td><form method="post" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="rule_key" value="{{ row.rule_key }}">
+{% if row.data_type=='boolean' %}<select name="value"><option value="1" {{ 'selected' if row.value=='1' else '' }}>نعم</option><option value="0" {{ 'selected' if row.value!='1' else '' }}>لا</option></select>
+{% elif row.data_type=='integer' %}<input type="number" name="value" value="{{ row.value }}" step="1" required>
+{% elif row.data_type=='decimal' %}<input type="number" name="value" value="{{ row.value }}" step="0.01" required>
+{% else %}<input type="text" name="value" value="{{ row.value }}" required>{% endif %}</td>
+<td>{{ row.description or '-' }}<input type="text" name="reason" placeholder="سبب التعديل (اختياري)"></td>
+<td>{{ row.updated_at }}{% if row.updated_by_name %}<small style="display:block">{{ row.updated_by_name }}</small>{% endif %}</td>
+<td><button name="action" value="save">حفظ</button><button class="secondary" name="action" value="reset">افتراضي</button></form></td>
+</tr>{% else %}<tr><td colspan="6">لا توجد سياسات مطابقة.</td></tr>{% endfor %}
+</tbody></table></div></div>
+<div class="panel"><h2>آخر تغييرات السياسات</h2><div class="table-wrap"><table><thead><tr><th>السياسة</th><th>القديم</th><th>الجديد</th><th>المستخدم</th><th>الوقت</th><th>السبب</th></tr></thead><tbody>
+{% for h in history %}<tr><td>{{ h.policy_name or h.rule_key }}</td><td>{{ h.old_value }}</td><td>{{ h.new_value }}</td><td>{{ h.changed_by_name or '-' }}</td><td>{{ h.changed_at }}</td><td>{{ h.reason or '-' }}</td></tr>{% else %}<tr><td colspan="6">لا توجد تغييرات بعد.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% endblock %}

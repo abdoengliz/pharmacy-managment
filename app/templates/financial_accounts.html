@@ -1,0 +1,10 @@
+{% extends 'base.html' %}{% block title %}الحسابات المالية{% endblock %}{% block content %}
+<div class="page-head"><div><h1>الحسابات المالية</h1><p>إدارة الخزائن والحسابات المصرفية والمحافظ لكل فرع.</p></div></div>
+{% if has_permission('manage_financial_accounts') %}<section class="panel"><h2>إضافة حساب مالي</h2><form method="post" class="grid-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>الفرع<select name="branch_id" required>{% for b in branches %}<option value="{{ b.id }}">{{ b.name }}</option>{% endfor %}</select></label>
+<label>اسم الحساب<input name="name" required placeholder="مثال: مصرف الجمهورية"></label>
+<label>النوع<select name="account_type"><option value="CASH">نقدي</option><option value="BANK">مصرفي</option><option value="WALLET">محفظة إلكترونية</option><option value="CARD">بطاقة</option></select></label>
+<label>ملاحظات<input name="notes"></label><button>إضافة الحساب</button></form></section>{% endif %}
+<div class="table-wrap"><table><tr><th>الفرع</th><th>الحساب</th><th>النوع</th><th>الرصيد الحالي</th><th>الحالة</th><th>الإجراء</th></tr>
+{% for r in rows %}<tr><td>{{ r.branch_name }}</td><td>{{ r.name }}</td><td>{{ {'CASH':'نقدي','BANK':'مصرفي','WALLET':'محفظة','CARD':'بطاقة'}.get(r.account_type,r.account_type) }}</td><td><strong>{{ '%.2f'|format(r.balance) }}</strong></td><td>{{ 'نشط' if r.is_active else 'موقوف' }}</td><td>{% if has_permission('manage_financial_accounts') %}<form method="post" action="{{ url_for('toggle_financial_account',account_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>{{ 'إيقاف' if r.is_active else 'تفعيل' }}</button></form>{% endif %}</td></tr>{% endfor %}</table></div>
+{% endblock %}

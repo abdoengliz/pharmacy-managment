@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% block title %}{{ invoice.invoice_no }}{% endblock %}{% block content %}
+<div class="page-head"><div><h1>{{ invoice.invoice_no }}</h1><p>{{ invoice.customer_name or 'عميل نقدي' }} · {{ invoice.invoice_date }}</p></div><a class="btn" href="{{ url_for('activity_timeline_page',entity_type='sales_invoice',entity_id=invoice.id) }}">الخط الزمني</a></div>
+<div class="stats"><div class="stat"><span>الحالة</span><strong>{{ invoice.status }}</strong></div><div class="stat"><span>الإجمالي</span><strong>{{ '%.2f'|format(invoice.total_amount) }}</strong></div><div class="stat"><span>الفرع</span><strong>{{ invoice.branch_name }}</strong></div></div>
+<section class="card"><div class="table-wrap"><table><thead><tr><th>الصنف</th><th>الكود</th><th>الكمية</th><th>السعر</th><th>الخصم</th><th>الضريبة</th><th>الإجمالي</th></tr></thead><tbody>{% for x in items %}<tr><td>{{ x.item_name }}</td><td>{{ x.item_code or '-' }}</td><td>{{ x.quantity }}</td><td>{{ '%.2f'|format(x.unit_price) }}</td><td>{{ x.discount_percent }}%</td><td>{{ x.tax_percent }}%</td><td>{{ '%.2f'|format(x.line_total) }}</td></tr>{% endfor %}</tbody></table></div></section>
+{% endblock %}
