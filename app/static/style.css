@@ -223,3 +223,54 @@ textarea{resize:vertical}
   .sidebar nav a,.notification-item,.quick-action-grid a{min-height:48px}
   button,.btn,.button-link,.actions a{min-height:46px}
 }
+
+
+/* v6.3.2 — Mobile Stage 2: app-like navigation and compact data views */
+.mobile-bottom-nav{display:none}
+@media(max-width:640px){
+  body.app-focus-mode{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  body.app-focus-mode .container{padding-bottom:18px}
+  .mobile-bottom-nav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;z-index:90;right:0;left:0;bottom:0;min-height:64px;padding:6px max(6px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));background:color-mix(in srgb,var(--panel) 94%,transparent);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(15,23,42,.12);backdrop-filter:blur(16px)}
+  .mobile-bottom-nav a,.mobile-bottom-nav button{display:grid;place-items:center;align-content:center;gap:2px;min-width:0;min-height:52px;padding:4px;border:0;border-radius:12px;background:transparent;color:var(--muted);text-decoration:none;font:inherit}
+  .mobile-bottom-nav span{font-size:1.2rem;line-height:1}.mobile-bottom-nav small{font-size:.68rem;font-weight:800;white-space:nowrap}
+  .mobile-bottom-nav a.active{color:var(--primary);background:color-mix(in srgb,var(--primary) 11%,transparent)}
+  .mobile-bottom-nav button:active,.mobile-bottom-nav a:active{transform:scale(.96)}
+
+  /* Convert ordinary result tables into readable cards on phones. */
+  .table-wrap:has(>table.mobile-card-table){overflow:visible;border:0;background:transparent;box-shadow:none}
+  table.mobile-card-table{display:block;min-width:0!important;width:100%;border-collapse:separate;background:transparent}
+  table.mobile-card-table thead{display:none}
+  table.mobile-card-table tbody{display:grid;gap:10px;width:100%}
+  table.mobile-card-table tr{display:grid;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 4px 14px rgba(15,23,42,.05)}
+  table.mobile-card-table td{display:grid;grid-template-columns:minmax(92px,35%) 1fr;align-items:center;gap:10px;min-height:36px;padding:7px 0!important;border:0!important;border-bottom:1px dashed var(--line)!important;white-space:normal!important;text-align:start;overflow-wrap:anywhere}
+  table.mobile-card-table td:last-child{border-bottom:0!important}
+  table.mobile-card-table td::before{content:attr(data-label);color:var(--muted);font-size:.76rem;font-weight:800}
+  table.mobile-card-table td[colspan]{display:block;text-align:center}
+  table.mobile-card-table td[colspan]::before{display:none}
+  table.mobile-card-table td form{margin:0}
+  table.mobile-card-table td .button-link,table.mobile-card-table td button{min-height:38px;padding:7px 10px}
+  table.mobile-card-table .employee-actions{display:flex;flex-wrap:wrap;justify-content:flex-start}
+  .table-wrap:has(>table.mobile-card-table)::after{display:none}
+
+  /* Dashboard and operational panels */
+  .analytics-kpi{min-height:132px;padding:15px}
+  .analytics-kpi strong{font-size:1.35rem;line-height:1.25}
+  .analytics-kpi-icon{font-size:1.35rem}
+  .revenue-chart-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .revenue-chart-wrap canvas{min-width:560px}
+  .panel-head .text-link{width:100%;text-align:center;padding:8px;border-radius:9px;background:var(--bg)}
+  .payment-legend>div{grid-template-columns:12px 1fr auto}
+  .compact-row{grid-template-columns:minmax(100px,1.5fr) .55fr .8fr;font-size:.78rem}
+  .comparison-row{align-items:flex-start}
+  .employee-stats,.hr-stats{grid-template-columns:1fr 1fr!important;gap:10px}
+  .employee-grid{grid-template-columns:1fr!important}
+  .employee-filter{display:grid!important;grid-template-columns:1fr!important}
+  .checkbox-label{display:flex!important;align-items:center;min-height:46px;padding:10px;border:1px solid var(--line);border-radius:10px}
+  .checkbox-label input{width:20px;height:20px;flex:0 0 auto}
+}
+@media(max-width:390px){
+  .mobile-bottom-nav small{font-size:.62rem}
+  .analytics-kpi strong{font-size:1.2rem}
+  .employee-stats,.hr-stats{grid-template-columns:1fr!important}
+  table.mobile-card-table td{grid-template-columns:82px 1fr}
+}

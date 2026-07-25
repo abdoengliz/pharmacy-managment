@@ -39,6 +39,12 @@
       {% block content %}{% endblock %}
     </main>
   </section>
+  <nav class="mobile-bottom-nav" aria-label="التنقل السريع للهاتف">
+    {% if has_permission('view_dashboard') %}<a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}"><span>⌂</span><small>الرئيسية</small></a>{% endif %}
+    {% if has_permission('view_revenue') %}<a href="{{ url_for('revenues') }}" class="{{ 'active' if request.endpoint == 'revenues' else '' }}"><span>＋</span><small>الإيرادات</small></a>{% endif %}
+    {% if has_permission('view_expenses') %}<a href="{{ url_for('expenses') }}" class="{{ 'active' if request.endpoint == 'expenses' else '' }}"><span>−</span><small>المصروفات</small></a>{% endif %}
+    <button type="button" id="mobileMoreMenu" aria-label="فتح القائمة الكاملة"><span>☰</span><small>المزيد</small></button>
+  </nav>
 </div>
 {% else %}<main class="container">{% for category, message in get_flashed_messages(with_categories=true) %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{{ self.content() }}</main>{% endif %}
 <script>
@@ -96,6 +102,17 @@ document.querySelectorAll('main.container table').forEach(table=>{
     table.parentNode.insertBefore(wrap,table);
     wrap.appendChild(table);
   }
+  const headers=[...table.querySelectorAll('thead th, tr:first-child th')].map(th=>th.textContent.trim());
+  if(headers.length && headers.length <= 8 && !table.matches('[data-mobile-table=scroll]')){
+    table.classList.add('mobile-card-table');
+    table.querySelectorAll('tbody tr, tr:not(:first-child)').forEach(row=>{
+      [...row.children].forEach((cell,index)=>{
+        if(cell.tagName==='TD' && headers[index]) cell.dataset.label=headers[index];
+      });
+    });
+  }
 });
+const mobileMoreMenu=document.getElementById('mobileMoreMenu');
+if(mobileMoreMenu) mobileMoreMenu.addEventListener('click',()=>setAppMenu(true));
 </script>
 </body></html>
