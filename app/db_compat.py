@@ -497,7 +497,12 @@ def connect(database_url: str | None, sqlite_path: Path, timeout: int = 30):
             import psycopg
         except ImportError as exc:
             raise RuntimeError("PostgreSQL mode requires: pip install psycopg[binary]") from exc
-        raw = psycopg.connect(database_url, connect_timeout=timeout, sslmode="require")
+        raw = psycopg.connect(
+            database_url,
+            connect_timeout=timeout,
+            sslmode="require",
+            prepare_threshold=None,
+        )
         return PostgresConnectionCompat(raw)
 
     db = sqlite3.connect(sqlite_path, timeout=timeout)
