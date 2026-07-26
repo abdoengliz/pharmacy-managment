@@ -1,0 +1,994 @@
+[
+  {
+    "function": "login",
+    "paths": [
+      "/login"
+    ],
+    "module": "auth_dashboard",
+    "line": 115
+  },
+  {
+    "function": "change_initial_password",
+    "paths": [
+      "/change-initial-password"
+    ],
+    "module": "auth_dashboard",
+    "line": 142
+  },
+  {
+    "function": "attendance_portal",
+    "paths": [
+      "/attendance-portal"
+    ],
+    "module": "auth_dashboard",
+    "line": 167
+  },
+  {
+    "function": "logout",
+    "paths": [
+      "/logout"
+    ],
+    "module": "auth_dashboard",
+    "line": 256
+  },
+  {
+    "function": "dashboard",
+    "paths": [
+      "/"
+    ],
+    "module": "auth_dashboard",
+    "line": 266
+  },
+  {
+    "function": "system_health",
+    "paths": [
+      "/system-health"
+    ],
+    "module": "system",
+    "line": 570
+  },
+  {
+    "function": "day_closing",
+    "paths": [
+      "/day-closing"
+    ],
+    "module": "finance",
+    "line": 635
+  },
+  {
+    "function": "cashbox",
+    "paths": [
+      "/cashbox"
+    ],
+    "module": "finance",
+    "line": 679
+  },
+  {
+    "function": "revenues",
+    "paths": [
+      "/revenues"
+    ],
+    "module": "finance",
+    "line": 777
+  },
+  {
+    "function": "financial_balances",
+    "paths": [
+      "/financial-balances"
+    ],
+    "module": "finance",
+    "line": 873
+  },
+  {
+    "function": "location_financial_balance",
+    "paths": [
+      "/financial-balances/location/<int:location_id>"
+    ],
+    "module": "finance",
+    "line": 925
+  },
+  {
+    "function": "account_statement",
+    "paths": [
+      "/financial-accounts/<int:account_id>/statement"
+    ],
+    "module": "finance",
+    "line": 985
+  },
+  {
+    "function": "export_account_statement",
+    "paths": [
+      "/financial-accounts/<int:account_id>/statement/export/<file_format>"
+    ],
+    "module": "finance",
+    "line": 996
+  },
+  {
+    "function": "financial_accounts",
+    "paths": [
+      "/financial-accounts"
+    ],
+    "module": "finance",
+    "line": 1017
+  },
+  {
+    "function": "toggle_financial_account",
+    "paths": [
+      "/financial-accounts/<int:account_id>/toggle"
+    ],
+    "module": "finance",
+    "line": 1042
+  },
+  {
+    "function": "suppliers",
+    "paths": [
+      "/suppliers"
+    ],
+    "module": "suppliers",
+    "line": 1051
+  },
+  {
+    "function": "add_supplier_account",
+    "paths": [
+      "/suppliers/<int:supplier_id>/accounts"
+    ],
+    "module": "suppliers",
+    "line": 1140
+  },
+  {
+    "function": "supplier_detail",
+    "paths": [
+      "/suppliers/<int:supplier_id>"
+    ],
+    "module": "suppliers",
+    "line": 1154
+  },
+  {
+    "function": "add_supplier_invoice",
+    "paths": [
+      "/suppliers/<int:supplier_id>/invoices"
+    ],
+    "module": "suppliers",
+    "line": 1197
+  },
+  {
+    "function": "edit_supplier_invoice",
+    "paths": [
+      "/supplier-invoices/<int:invoice_id>/edit"
+    ],
+    "module": "suppliers",
+    "line": 1223
+  },
+  {
+    "function": "delete_supplier_invoice",
+    "paths": [
+      "/supplier-invoices/<int:invoice_id>/delete"
+    ],
+    "module": "suppliers",
+    "line": 1252
+  },
+  {
+    "function": "supplier_direct_payment",
+    "paths": [
+      "/suppliers/<int:supplier_id>/direct-payment"
+    ],
+    "module": "suppliers",
+    "line": 1273
+  },
+  {
+    "function": "archive_supplier",
+    "paths": [
+      "/suppliers/<int:supplier_id>/archive"
+    ],
+    "module": "suppliers",
+    "line": 1305
+  },
+  {
+    "function": "add_supplier_communication",
+    "paths": [
+      "/suppliers/<int:supplier_id>/communications"
+    ],
+    "module": "suppliers",
+    "line": 1318
+  },
+  {
+    "function": "merge_supplier",
+    "paths": [
+      "/suppliers/<int:supplier_id>/merge"
+    ],
+    "module": "suppliers",
+    "line": 1329
+  },
+  {
+    "function": "update_supplier_opening_balance",
+    "paths": [
+      "/supplier-accounts/<int:account_id>/opening-balance"
+    ],
+    "module": "suppliers",
+    "line": 1359
+  },
+  {
+    "function": "supplier_statement",
+    "paths": [
+      "/suppliers/<int:supplier_id>/statement"
+    ],
+    "module": "suppliers",
+    "line": 1371
+  },
+  {
+    "function": "payments",
+    "paths": [
+      "/payments"
+    ],
+    "module": "finance",
+    "line": 1393
+  },
+  {
+    "function": "edit_revenue",
+    "paths": [
+      "/revenues/<int:revenue_id>/edit"
+    ],
+    "module": "finance",
+    "line": 1445
+  },
+  {
+    "function": "delete_revenue",
+    "paths": [
+      "/revenues/<int:revenue_id>/delete"
+    ],
+    "module": "finance",
+    "line": 1515
+  },
+  {
+    "function": "edit_supplier",
+    "paths": [
+      "/suppliers/<int:supplier_id>/edit"
+    ],
+    "module": "suppliers",
+    "line": 1539
+  },
+  {
+    "function": "delete_supplier",
+    "paths": [
+      "/suppliers/<int:supplier_id>/delete"
+    ],
+    "module": "suppliers",
+    "line": 1567
+  },
+  {
+    "function": "edit_payment",
+    "paths": [
+      "/payments/<int:payment_id>/edit"
+    ],
+    "module": "finance",
+    "line": 1591
+  },
+  {
+    "function": "delete_payment",
+    "paths": [
+      "/payments/<int:payment_id>/delete"
+    ],
+    "module": "finance",
+    "line": 1654
+  },
+  {
+    "function": "expenses",
+    "paths": [
+      "/expenses"
+    ],
+    "module": "finance",
+    "line": 1677
+  },
+  {
+    "function": "edit_expense",
+    "paths": [
+      "/expenses/<int:expense_id>/edit"
+    ],
+    "module": "finance",
+    "line": 1734
+  },
+  {
+    "function": "delete_expense",
+    "paths": [
+      "/expenses/<int:expense_id>/delete"
+    ],
+    "module": "finance",
+    "line": 1795
+  },
+  {
+    "function": "external_debts",
+    "paths": [
+      "/external-debts"
+    ],
+    "module": "finance",
+    "line": 1816
+  },
+  {
+    "function": "edit_external_debt",
+    "paths": [
+      "/external-debts/<int:debt_id>/edit"
+    ],
+    "module": "finance",
+    "line": 1868
+  },
+  {
+    "function": "external_debt_detail",
+    "paths": [
+      "/external-debts/<int:debt_id>"
+    ],
+    "module": "finance",
+    "line": 1894
+  },
+  {
+    "function": "delete_external_debt",
+    "paths": [
+      "/external-debts/<int:debt_id>/delete"
+    ],
+    "module": "finance",
+    "line": 1922
+  },
+  {
+    "function": "trash_page",
+    "paths": [
+      "/trash"
+    ],
+    "module": "system",
+    "line": 1932
+  },
+  {
+    "function": "restore_trash",
+    "paths": [
+      "/trash/<int:trash_id>/restore"
+    ],
+    "module": "system",
+    "line": 1944
+  },
+  {
+    "function": "purge_trash",
+    "paths": [
+      "/trash/<int:trash_id>/purge"
+    ],
+    "module": "system",
+    "line": 1969
+  },
+  {
+    "function": "locations",
+    "paths": [
+      "/locations"
+    ],
+    "module": "organization",
+    "line": 1985
+  },
+  {
+    "function": "employees",
+    "paths": [
+      "/employees"
+    ],
+    "module": "hr",
+    "line": 2069
+  },
+  {
+    "function": "employee_detail",
+    "paths": [
+      "/employees/<int:employee_id>"
+    ],
+    "module": "hr",
+    "line": 2184
+  },
+  {
+    "function": "add_employee_attendance",
+    "paths": [
+      "/employees/<int:employee_id>/attendance"
+    ],
+    "module": "hr",
+    "line": 2245
+  },
+  {
+    "function": "add_employee_leave",
+    "paths": [
+      "/employees/<int:employee_id>/leaves"
+    ],
+    "module": "hr",
+    "line": 2275
+  },
+  {
+    "function": "add_employee_adjustment",
+    "paths": [
+      "/employees/<int:employee_id>/adjustments"
+    ],
+    "module": "hr",
+    "line": 2297
+  },
+  {
+    "function": "generate_employee_payroll",
+    "paths": [
+      "/employees/<int:employee_id>/payroll"
+    ],
+    "module": "hr",
+    "line": 2320
+  },
+  {
+    "function": "mark_employee_payroll_paid",
+    "paths": [
+      "/employees/payroll/<int:payroll_id>/paid"
+    ],
+    "module": "hr",
+    "line": 2352
+  },
+  {
+    "function": "edit_employee",
+    "paths": [
+      "/employees/<int:employee_id>/edit"
+    ],
+    "module": "hr",
+    "line": 2368
+  },
+  {
+    "function": "toggle_employee",
+    "paths": [
+      "/employees/<int:employee_id>/toggle"
+    ],
+    "module": "hr",
+    "line": 2432
+  },
+  {
+    "function": "users",
+    "paths": [
+      "/users"
+    ],
+    "module": "users_access",
+    "line": 2449
+  },
+  {
+    "function": "edit_user",
+    "paths": [
+      "/users/<int:user_id>/edit"
+    ],
+    "module": "users_access",
+    "line": 2502
+  },
+  {
+    "function": "system_management",
+    "paths": [
+      "/system-management"
+    ],
+    "module": "operations",
+    "line": 2566
+  },
+  {
+    "function": "roles_page",
+    "paths": [
+      "/roles"
+    ],
+    "module": "users_access",
+    "line": 2586
+  },
+  {
+    "function": "edit_role",
+    "paths": [
+      "/roles/<int:role_id>/edit"
+    ],
+    "module": "users_access",
+    "line": 2609
+  },
+  {
+    "function": "clone_role",
+    "paths": [
+      "/roles/<int:role_id>/clone"
+    ],
+    "module": "users_access",
+    "line": 2626
+  },
+  {
+    "function": "departments_page",
+    "paths": [
+      "/departments"
+    ],
+    "module": "hr",
+    "line": 2650
+  },
+  {
+    "function": "toggle_department",
+    "paths": [
+      "/departments/<int:department_id>/toggle"
+    ],
+    "module": "hr",
+    "line": 2666
+  },
+  {
+    "function": "jobs_page",
+    "paths": [
+      "/jobs"
+    ],
+    "module": "hr",
+    "line": 2674
+  },
+  {
+    "function": "toggle_job",
+    "paths": [
+      "/jobs/<int:job_id>/toggle"
+    ],
+    "module": "hr",
+    "line": 2692
+  },
+  {
+    "function": "code_generator",
+    "paths": [
+      "/code-generator"
+    ],
+    "module": "operations",
+    "line": 2700
+  },
+  {
+    "function": "audit_page",
+    "paths": [
+      "/audit"
+    ],
+    "module": "system",
+    "line": 2713
+  },
+  {
+    "function": "event_history_page",
+    "paths": [
+      "/events"
+    ],
+    "module": "operations",
+    "line": 2727
+  },
+  {
+    "function": "error_center_page",
+    "paths": [
+      "/errors"
+    ],
+    "module": "operations",
+    "line": 2736
+  },
+  {
+    "function": "resolve_error",
+    "paths": [
+      "/errors/<int:error_id>/resolve"
+    ],
+    "module": "operations",
+    "line": 2744
+  },
+  {
+    "function": "activity_timeline_page",
+    "paths": [
+      "/timeline/<entity_type>/<int:entity_id>"
+    ],
+    "module": "operations",
+    "line": 2751
+  },
+  {
+    "function": "reports",
+    "paths": [
+      "/reports"
+    ],
+    "module": "reports",
+    "line": 2761
+  },
+  {
+    "function": "export_report",
+    "paths": [
+      "/reports/export/<report_type>/<file_format>"
+    ],
+    "module": "reports",
+    "line": 2896
+  },
+  {
+    "function": "settings_page",
+    "paths": [
+      "/settings"
+    ],
+    "module": "system",
+    "line": 2938
+  },
+  {
+    "function": "create_backup",
+    "paths": [
+      "/backup/create"
+    ],
+    "module": "system",
+    "line": 3008
+  },
+  {
+    "function": "download_backup",
+    "paths": [
+      "/backup/download/<path:filename>"
+    ],
+    "module": "system",
+    "line": 3038
+  },
+  {
+    "function": "notifications_page",
+    "paths": [
+      "/notifications"
+    ],
+    "module": "workflow",
+    "line": 3050
+  },
+  {
+    "function": "notifications_read_all",
+    "paths": [
+      "/notifications/read-all"
+    ],
+    "module": "workflow",
+    "line": 3057
+  },
+  {
+    "function": "open_notification",
+    "paths": [
+      "/notifications/<int:notification_id>/open"
+    ],
+    "module": "workflow",
+    "line": 3068
+  },
+  {
+    "function": "tasks_page",
+    "paths": [
+      "/tasks"
+    ],
+    "module": "workflow",
+    "line": 3086
+  },
+  {
+    "function": "complete_task",
+    "paths": [
+      "/tasks/<int:task_id>/complete"
+    ],
+    "module": "workflow",
+    "line": 3093
+  },
+  {
+    "function": "dashboard_add_task",
+    "paths": [
+      "/dashboard/tasks/add"
+    ],
+    "module": "workflow",
+    "line": 3111
+  },
+  {
+    "function": "dashboard_toggle_task",
+    "paths": [
+      "/dashboard/tasks/<int:task_id>/toggle"
+    ],
+    "module": "workflow",
+    "line": 3141
+  },
+  {
+    "function": "dashboard_delete_task",
+    "paths": [
+      "/dashboard/tasks/<int:task_id>/delete"
+    ],
+    "module": "workflow",
+    "line": 3159
+  },
+  {
+    "function": "dashboard_add_note",
+    "paths": [
+      "/dashboard/notes/add"
+    ],
+    "module": "operations",
+    "line": 3173
+  },
+  {
+    "function": "dashboard_update_note",
+    "paths": [
+      "/dashboard/notes/<int:note_id>/update"
+    ],
+    "module": "operations",
+    "line": 3187
+  },
+  {
+    "function": "dashboard_delete_note",
+    "paths": [
+      "/dashboard/notes/<int:note_id>/delete"
+    ],
+    "module": "operations",
+    "line": 3200
+  },
+  {
+    "function": "global_search",
+    "paths": [
+      "/search"
+    ],
+    "module": "operations",
+    "line": 3209
+  },
+  {
+    "function": "inventory",
+    "paths": [
+      "/inventory"
+    ],
+    "module": "inventory",
+    "line": 3296
+  },
+  {
+    "function": "toggle_product",
+    "paths": [
+      "/products/<int:product_id>/toggle"
+    ],
+    "module": "inventory",
+    "line": 3370
+  },
+  {
+    "function": "stock_transfers",
+    "paths": [
+      "/stock-transfers"
+    ],
+    "module": "inventory",
+    "line": 3394
+  },
+  {
+    "function": "stock_transfer_detail",
+    "paths": [
+      "/stock-transfers/<int:transfer_id>"
+    ],
+    "module": "inventory",
+    "line": 3481
+  },
+  {
+    "function": "send_stock_transfer",
+    "paths": [
+      "/stock-transfers/<int:transfer_id>/send"
+    ],
+    "module": "inventory",
+    "line": 3512
+  },
+  {
+    "function": "receive_stock_transfer",
+    "paths": [
+      "/stock-transfers/<int:transfer_id>/receive"
+    ],
+    "module": "inventory",
+    "line": 3555
+  },
+  {
+    "function": "cancel_stock_transfer",
+    "paths": [
+      "/stock-transfers/<int:transfer_id>/cancel"
+    ],
+    "module": "inventory",
+    "line": 3594
+  },
+  {
+    "function": "invoice_transfers",
+    "paths": [
+      "/invoice-transfers"
+    ],
+    "module": "operations",
+    "line": 3610
+  },
+  {
+    "function": "invoice_transfer_detail",
+    "paths": [
+      "/invoice-transfers/<int:transfer_id>"
+    ],
+    "module": "operations",
+    "line": 3644
+  },
+  {
+    "function": "send_invoice_transfer",
+    "paths": [
+      "/invoice-transfers/<int:transfer_id>/send"
+    ],
+    "module": "operations",
+    "line": 3659
+  },
+  {
+    "function": "receive_invoice_transfer",
+    "paths": [
+      "/invoice-transfers/<int:transfer_id>/receive"
+    ],
+    "module": "operations",
+    "line": 3677
+  },
+  {
+    "function": "cancel_invoice_transfer",
+    "paths": [
+      "/invoice-transfers/<int:transfer_id>/cancel"
+    ],
+    "module": "operations",
+    "line": 3693
+  },
+  {
+    "function": "treasury_center",
+    "paths": [
+      "/treasury-center"
+    ],
+    "module": "finance",
+    "line": 3767
+  },
+  {
+    "function": "create_treasury_transfer",
+    "paths": [
+      "/treasury-transfers"
+    ],
+    "module": "finance",
+    "line": 3809
+  },
+  {
+    "function": "edit_treasury_transfer",
+    "paths": [
+      "/treasury-transfers/<int:transfer_id>/edit"
+    ],
+    "module": "finance",
+    "line": 3852
+  },
+  {
+    "function": "delete_treasury_transfer",
+    "paths": [
+      "/treasury-transfers/<int:transfer_id>/delete"
+    ],
+    "module": "finance",
+    "line": 3955
+  },
+  {
+    "function": "treasury_transfer_detail",
+    "paths": [
+      "/treasury-transfers/<int:transfer_id>"
+    ],
+    "module": "finance",
+    "line": 3993
+  },
+  {
+    "function": "send_treasury_transfer",
+    "paths": [
+      "/treasury-transfers/<int:transfer_id>/send"
+    ],
+    "module": "finance",
+    "line": 4018
+  },
+  {
+    "function": "receive_treasury_transfer",
+    "paths": [
+      "/treasury-transfers/<int:transfer_id>/receive"
+    ],
+    "module": "finance",
+    "line": 4051
+  },
+  {
+    "function": "cancel_treasury_transfer",
+    "paths": [
+      "/treasury-transfers/<int:transfer_id>/cancel"
+    ],
+    "module": "finance",
+    "line": 4083
+  },
+  {
+    "function": "approvals_center",
+    "paths": [
+      "/approvals"
+    ],
+    "module": "workflow",
+    "line": 4099
+  },
+  {
+    "function": "approval_detail",
+    "paths": [
+      "/approvals/<int:request_id>"
+    ],
+    "module": "workflow",
+    "line": 4123
+  },
+  {
+    "function": "decide_approval",
+    "paths": [
+      "/approvals/<int:request_id>/decide"
+    ],
+    "module": "workflow",
+    "line": 4145
+  },
+  {
+    "function": "approval_definitions_page",
+    "paths": [
+      "/approval-definitions"
+    ],
+    "module": "operations",
+    "line": 4180
+  },
+  {
+    "function": "export_treasury_center",
+    "paths": [
+      "/treasury-center/export/<file_format>"
+    ],
+    "module": "finance",
+    "line": 4188
+  },
+  {
+    "function": "financial_reports",
+    "paths": [
+      "/financial-reports/<report_name>"
+    ],
+    "module": "finance",
+    "line": 4290
+  },
+  {
+    "function": "add_financial_adjustment",
+    "paths": [
+      "/financial-reports/adjustments"
+    ],
+    "module": "finance",
+    "line": 4307
+  },
+  {
+    "function": "cancel_financial_adjustment",
+    "paths": [
+      "/financial-reports/adjustments/<int:adjustment_id>/cancel"
+    ],
+    "module": "finance",
+    "line": 4324
+  },
+  {
+    "function": "export_financial_report",
+    "paths": [
+      "/financial-reports/<report_name>/export/<file_format>"
+    ],
+    "module": "finance",
+    "line": 4334
+  },
+  {
+    "function": "system_version",
+    "paths": [
+      "/system-version"
+    ],
+    "module": "system",
+    "line": 4346
+  },
+  {
+    "function": "workflows_page",
+    "paths": [
+      "/workflows"
+    ],
+    "module": "workflow",
+    "line": 4356
+  },
+  {
+    "function": "workflow_detail",
+    "paths": [
+      "/workflows/<int:workflow_id>"
+    ],
+    "module": "workflow",
+    "line": 4371
+  },
+  {
+    "function": "system_policies_page",
+    "paths": [
+      "/system-policies"
+    ],
+    "module": "system",
+    "line": 4412
+  },
+  {
+    "function": "customers_page",
+    "paths": [
+      "/customers"
+    ],
+    "module": "sales",
+    "line": 4472
+  },
+  {
+    "function": "product_search_api",
+    "paths": [
+      "/api/products/search"
+    ],
+    "module": "inventory",
+    "line": 4492
+  },
+  {
+    "function": "sales_invoices_page",
+    "paths": [
+      "/sales-invoices"
+    ],
+    "module": "sales",
+    "line": 4527
+  },
+  {
+    "function": "sales_invoice_detail",
+    "paths": [
+      "/sales-invoices/<int:invoice_id>"
+    ],
+    "module": "sales",
+    "line": 4559
+  }
+]

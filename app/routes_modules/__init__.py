@@ -1,0 +1,1 @@
+"""Modular Flask route registrations."""
