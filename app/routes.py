@@ -3,6 +3,7 @@ from __future__ import annotations
 import sqlite3
 import json
 import shutil
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,22 @@ ASSET_TYPES = {
     "IMPROVEMENTS": "تحسينات وتجهيزات",
     "OTHER": "أخرى",
 }
+
+
+def backup_directory() -> Path:
+    """Return a writable backup directory on local and serverless hosts.
+
+    Vercel mounts the deployed application under /var/task as read-only. Its
+    only writable filesystem location is /tmp, which is temporary and may be
+    cleared between invocations. An explicit BACKUPS_DIR environment variable
+    takes precedence for non-Vercel deployments.
+    """
+    configured = os.environ.get("BACKUPS_DIR", "").strip()
+    if configured:
+        return Path(configured).expanduser()
+    if os.environ.get("VERCEL") or str(BASE_DIR).startswith("/var/task"):
+        return Path("/tmp/pharma_erp_backups")
+    return BASE_DIR / "backups"
 
 
 def load_financial_classifications(active_only: bool = True) -> dict[str, str]:
@@ -2969,9 +2986,17 @@ def settings_page() -> Any:
         audit("تعديل إعدادات النظام", f"تم تحديث قسم: {definition['title']}")
         flash(f"تم حفظ {definition['title']} بنجاح.", "success")
         return redirect(url_for("settings_page", section=section))
-    backups_dir = BASE_DIR / "backups"
-    backups_dir.mkdir(exist_ok=True)
-    backups = sorted((f for f in backups_dir.glob("*.db")), key=lambda x: x.stat().st_mtime, reverse=True)
+    backups_dir = backup_directory()
+    try:
+        backups_dir.mkdir(parents=True, exist_ok=True)
+        backups = sorted(
+            (f for f in backups_dir.glob("*.db")),
+            key=lambda x: x.stat().st_mtime,
+            reverse=True,
+        )
+    except OSError:
+        app.logger.exception("Could not prepare the backup directory: %s", backups_dir)
+        backups = []
     return render_template(
         "settings.html", settings=all_settings(), backups=backups[:20], section=section, sections=sections,
     )
@@ -2981,15 +3006,28 @@ def settings_page() -> Any:
 @login_required
 @permission_required("manage_settings")
 def create_backup() -> Any:
-    backups_dir = BASE_DIR / "backups"
-    backups_dir.mkdir(exist_ok=True)
+    # The built-in backup routine copies a local SQLite database. Production
+    # uses PostgreSQL/Supabase, whose backups must be managed by Supabase rather
+    # than by opening PHARMA_DB_PATH as a SQLite file.
+    if DATABASE_URL:
+        flash(
+            "قاعدة البيانات سحابية على Supabase؛ تُدار النسخ الاحتياطية من لوحة Supabase ولا يمكن إنشاؤها كملف SQLite من Vercel.",
+            "info",
+        )
+        return redirect(url_for("settings_page", section="backup"))
+
+    backups_dir = backup_directory()
+    backups_dir.mkdir(parents=True, exist_ok=True)
     filename = f"pharmacy_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
     target = backups_dir / filename
     source = sqlite3.connect(DB_PATH)
     destination = sqlite3.connect(target)
-    with destination:
-        source.backup(destination)
-    source.close(); destination.close()
+    try:
+        with destination:
+            source.backup(destination)
+    finally:
+        source.close()
+        destination.close()
     audit("إنشاء نسخة احتياطية", filename)
     return send_file(target, as_attachment=True, download_name=filename)
 
@@ -2999,7 +3037,7 @@ def create_backup() -> Any:
 @permission_required("manage_settings")
 def download_backup(filename: str) -> Any:
     safe_name = Path(filename).name
-    target = BASE_DIR / "backups" / safe_name
+    target = backup_directory() / safe_name
     if not target.exists() or target.suffix != ".db":
         flash("النسخة الاحتياطية غير موجودة.", "danger")
         return redirect(url_for("settings_page"))
