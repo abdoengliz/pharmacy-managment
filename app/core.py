@@ -1292,8 +1292,14 @@ def init_db() -> None:
     if "must_change_password" not in user_columns:
         db.execute("ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0")
 
-    admin = db.execute("SELECT id,password_hash FROM users WHERE username = 'admin'").fetchone()
-    if not admin:
+    # Bootstrap the first administrator only when the users table is truly empty.
+    # Existing production databases may use a different administrator username,
+    # so checking only for username='admin' can incorrectly block startup.
+    existing_user = db.execute(
+        "SELECT id, username, password_hash FROM users ORDER BY id LIMIT 1"
+    ).fetchone()
+
+    if not existing_user:
         bootstrap_password = os.environ.get("ADMIN_INITIAL_PASSWORD", "").strip()
         is_production = os.environ.get("APP_ENV", "development").strip().lower() == "production"
         if is_production and len(bootstrap_password) < 12:
@@ -1303,7 +1309,10 @@ def init_db() -> None:
             import secrets
             bootstrap_password = secrets.token_urlsafe(16)
             credentials_file = BASE_DIR / "FIRST_RUN_ADMIN.txt"
-            credentials_file.write_text(f"username=admin\npassword={bootstrap_password}\nغيّر كلمة المرور فور أول دخول.\n", encoding="utf-8")
+            credentials_file.write_text(
+                f"username=admin\npassword={bootstrap_password}\nغيّر كلمة المرور فور أول دخول.\n",
+                encoding="utf-8",
+            )
             try:
                 credentials_file.chmod(0o600)
             except OSError:
@@ -1312,8 +1321,12 @@ def init_db() -> None:
             "INSERT INTO users(username,password_hash,full_name,role,must_change_password,created_at) VALUES(?,?,?,?,?,?)",
             ("admin", generate_password_hash(bootstrap_password), "المدير الرئيسي", "admin", 1, now()),
         )
-    elif check_password_hash(admin["password_hash"], "admin123"):
-        db.execute("UPDATE users SET must_change_password=1 WHERE id=?", (admin["id"],))
+    else:
+        legacy_admin = db.execute(
+            "SELECT id,password_hash FROM users WHERE username='admin' ORDER BY id LIMIT 1"
+        ).fetchone()
+        if legacy_admin and check_password_hash(legacy_admin["password_hash"], "admin123"):
+            db.execute("UPDATE users SET must_change_password=1 WHERE id=?", (legacy_admin["id"],))
     db.commit()
     db.close()
 
