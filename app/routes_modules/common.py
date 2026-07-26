@@ -23,11 +23,11 @@ from flask import flash, redirect, render_template, request, session, url_for, s
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from . import app
+from .. import app
 
-from .core import *  # noqa: F401,F403
+from ..core import *  # noqa: F401,F403
 
-from .transaction_utils import atomic
+from ..transaction_utils import atomic
 
 FINANCIAL_CLASSIFICATIONS = {
     "OPERATING": "مصروف تشغيلي",
@@ -72,15 +72,15 @@ def financial_classification_id(code: str) -> int:
         raise ValueError("التصنيف المالي غير موجود أو موقوف.")
     return int(row["id"])
 
-from .report_engine import build_pdf, build_docx, build_excel
+from ..report_engine import build_pdf, build_docx, build_excel
 
-from .approvals import ApprovalService
+from ..approvals import ApprovalService
 
-from .notifications import NotificationService
+from ..notifications import NotificationService
 
-from .tasks import TaskService
+from ..tasks import TaskService
 
-from .events import EventBus, Event
+from ..events import EventBus, Event
 
 def _row_dict(row: sqlite3.Row) -> dict[str, Any]:
     return {key: row[key] for key in row.keys()}
