@@ -3,6 +3,14 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}{{ app_settings.get("company_name", "صيدلي ERP") }}{% endblock %}</title>
+  <meta name="theme-color" content="#0f766e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="صيدلي ERP">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="{% if current_user %}app-focus-mode{% endif %} page-{{ request.endpoint|default('unknown')|replace('_','-') }}">
@@ -35,6 +43,10 @@
   <section class="main-area">
     <header class="topbar"><button class="icon-btn app-menu-toggle" id="appMenuToggle" type="button" title="القائمة الرئيسية (F12)" aria-label="فتح القائمة الرئيسية" aria-expanded="false">☰</button><div class="top-title">{{ app_settings.get("company_name", "نظام الإدارة المالية للصيدليات") }}</div><button class="icon-btn mobile-search-toggle" id="mobileSearchToggle" type="button" aria-label="فتح البحث">⌕</button><form class="global-search" id="globalSearchForm" method="get" action="{{ url_for('global_search') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="search" name="q" value="{{ request.args.get('q', '') if request.endpoint == 'global_search' else '' }}" placeholder="ابحث في النظام..." minlength="2" required><button type="submit" title="بحث">⌕</button></form><div class="top-actions"><details class="notification-menu"><summary class="icon-btn bell-btn" title="الإشعارات">🔔{% if unread_notification_count %}<span class="bell-count">{{ unread_notification_count }}</span>{% endif %}</summary><div class="notification-dropdown"><div class="notification-head"><strong>الإشعارات</strong><form method="post" action="{{ url_for('notifications_read_all') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="link-btn">تحديد الكل كمقروء</button></form></div>{% for n in top_notifications %}<a class="notification-item {{ 'unread' if not n.is_read else '' }}" href="{{ url_for('open_notification', notification_id=n.id) }}"><strong>{{ n.title }}</strong><span>{{ n.message }}</span><small>{{ n.created_at }}</small></a>{% else %}<div class="empty-note">لا توجد إشعارات.</div>{% endfor %}<a class="all-link" href="{{ url_for('notifications_page') }}">عرض كل الإشعارات</a></div></details><a class="icon-btn task-btn" href="{{ url_for('tasks_page') }}" title="المهام">☑{% if open_task_count %}<span class="bell-count">{{ open_task_count }}</span>{% endif %}</a><button class="icon-btn" id="themeToggle" title="الوضع الليلي">◐</button></div></header>
     <main class="container">
+      <aside class="pwa-install-card" id="pwaInstallCard" hidden>
+        <div class="pwa-install-icon">📲</div><div class="pwa-install-copy"><strong>ثبّت البرنامج على جهازك</strong><small id="pwaInstallHint">افتحه كأي تطبيق من الشاشة الرئيسية.</small></div>
+        <button type="button" class="btn primary" id="pwaInstallButton">تثبيت</button><button type="button" class="pwa-install-dismiss" id="pwaInstallDismiss" aria-label="إخفاء">×</button>
+      </aside>
       {% for category, message in get_flashed_messages(with_categories=true) %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}
       {% block content %}{% endblock %}
     </main>
@@ -153,5 +165,29 @@ if(mobileQuickMore)mobileQuickMore.addEventListener('click',()=>{setMobileQuick(
 document.addEventListener('keydown',event=>{if(event.key==='Escape')setMobileQuick(false)});
 const mobileMoreMenu=document.getElementById('mobileMoreMenu');
 if(mobileMoreMenu) mobileMoreMenu.addEventListener('click',()=>setAppMenu(true));
+// Progressive Web App: cache only public static assets; authenticated pages remain network-first.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js').catch(() => {}));
+}
+let deferredInstallPrompt = null;
+const pwaCard = document.getElementById('pwaInstallCard');
+const pwaButton = document.getElementById('pwaInstallButton');
+const pwaDismiss = document.getElementById('pwaInstallDismiss');
+const pwaHint = document.getElementById('pwaInstallHint');
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const installDismissed = localStorage.getItem('pwa-install-dismissed') === '1';
+function showPwaCard(){ if(pwaCard && !isStandalone && !installDismissed) pwaCard.hidden=false; }
+window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstallPrompt=event; showPwaCard(); });
+if(isIOS && !isStandalone && !installDismissed){
+  if(pwaHint) pwaHint.textContent='من زر المشاركة اختر «إضافة إلى الشاشة الرئيسية».';
+  if(pwaButton){ pwaButton.textContent='طريقة التثبيت'; pwaButton.addEventListener('click',()=>alert('اضغط زر المشاركة في Safari، ثم اختر «إضافة إلى الشاشة الرئيسية».')); }
+  showPwaCard();
+}else if(pwaButton){
+  pwaButton.addEventListener('click', async()=>{ if(!deferredInstallPrompt)return; deferredInstallPrompt.prompt(); await deferredInstallPrompt.userChoice; deferredInstallPrompt=null; if(pwaCard)pwaCard.hidden=true; });
+}
+if(pwaDismiss) pwaDismiss.addEventListener('click',()=>{ localStorage.setItem('pwa-install-dismissed','1'); if(pwaCard)pwaCard.hidden=true; });
+window.addEventListener('appinstalled',()=>{ deferredInstallPrompt=null; if(pwaCard)pwaCard.hidden=true; });
+
 </script>
 </body></html>

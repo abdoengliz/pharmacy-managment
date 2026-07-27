@@ -453,3 +453,10 @@ textarea{resize:vertical}
   .mobile-quick-grid>a,.mobile-quick-grid>button{grid-template-columns:36px 1fr;padding:8px;column-gap:7px}
   .mobile-quick-grid span{width:36px;height:36px}
 }
+
+
+/* v6.4.3 - PWA install experience */
+.pwa-install-card{position:relative;display:flex;align-items:center;gap:12px;margin:0 0 16px;padding:14px 16px;border:1px solid color-mix(in srgb,#0f766e 25%,transparent);border-radius:18px;background:linear-gradient(135deg,color-mix(in srgb,#0f766e 12%,var(--surface,#fff)),var(--surface,#fff));box-shadow:0 10px 30px rgba(15,118,110,.10)}
+.pwa-install-card[hidden]{display:none!important}.pwa-install-icon{font-size:30px}.pwa-install-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}.pwa-install-copy small{opacity:.72}.pwa-install-dismiss{border:0;background:transparent;font-size:24px;line-height:1;cursor:pointer;opacity:.65}
+@media(max-width:700px){.pwa-install-card{padding:12px;margin-top:2px;gap:9px}.pwa-install-icon{font-size:25px}.pwa-install-copy strong{font-size:14px}.pwa-install-copy small{font-size:12px}.pwa-install-card .btn{padding:9px 12px;white-space:nowrap}.pwa-install-dismiss{position:absolute;top:-7px;left:-5px;width:28px;height:28px;border-radius:50%;background:var(--surface,#fff);box-shadow:0 3px 10px #0002}}
+@media(display-mode:standalone){body{overscroll-behavior-y:none}.topbar{padding-top:max(0px,env(safe-area-inset-top))}.mobile-bottom-nav{padding-bottom:max(8px,env(safe-area-inset-bottom))}}

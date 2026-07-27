@@ -7,7 +7,7 @@ from datetime import timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for, send_from_directory
 
 
 def _env_flag(name: str, default: bool = False) -> bool:
@@ -103,6 +103,14 @@ def security_headers(response):
     response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
     if IS_PRODUCTION:
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return response
+
+
+@app.get("/service-worker.js")
+def service_worker():
+    response = send_from_directory(app.static_folder, "service-worker.js", mimetype="application/javascript")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Service-Worker-Allowed"] = "/"
     return response
 
 
