@@ -509,3 +509,55 @@ body.mobile-quick-open,body.app-focus-mode.app-menu-open{
   -webkit-overflow-scrolling:touch;
   touch-action:pan-y;
 }
+
+/* v6.4.5 — definitive installed-app content scroll fix
+   Mobile browsers can freeze document/body scrolling in standalone mode.
+   Use .main-area as the single vertical scroll viewport instead. */
+@media (max-width:900px){
+  html,body{
+    width:100%;
+    height:100%!important;
+    min-height:100%!important;
+    overflow:hidden!important;
+  }
+  body.app-focus-mode{
+    height:100%!important;
+    min-height:100%!important;
+    overflow:hidden!important;
+    position:relative!important;
+  }
+  body.app-focus-mode .app-shell{
+    display:block;
+    width:100%;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    overflow:hidden!important;
+  }
+  body.app-focus-mode .main-area{
+    position:relative;
+    width:100%;
+    height:100dvh!important;
+    min-height:0!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:auto;
+    touch-action:pan-y;
+  }
+  body.app-focus-mode main.container{
+    height:auto!important;
+    min-height:calc(100dvh - 100px)!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:calc(92px + env(safe-area-inset-bottom))!important;
+  }
+  body.app-focus-mode .sidebar{height:100dvh!important}
+  body.app-focus-mode.app-menu-open .main-area,
+  body.mobile-quick-open .main-area{overflow-y:hidden!important}
+}
+@media (display-mode:standalone) and (max-width:900px){
+  body.app-focus-mode .main-area{
+    height:100dvh!important;
+    overflow-y:scroll!important;
+  }
+}

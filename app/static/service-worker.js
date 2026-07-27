@@ -1,6 +1,5 @@
-const CACHE_NAME = "pharma-erp-shell-v641";
+const CACHE_NAME = "pharma-erp-shell-v645";
 const SHELL = [
-  "/static/style.css",
   "/static/offline.html",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png"
@@ -22,9 +21,9 @@ self.addEventListener("fetch", event => {
     return;
   }
   if (url.origin === self.location.origin && url.pathname.startsWith("/static/")) {
-    event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
+    event.respondWith(fetch(request).then(response => {
       if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
       return response;
-    })));
+    }).catch(() => caches.match(request)));
   }
 });
