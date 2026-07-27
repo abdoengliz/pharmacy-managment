@@ -561,3 +561,76 @@ body.mobile-quick-open,body.app-focus-mode.app-menu-open{
     overflow-y:scroll!important;
   }
 }
+
+/* v6.4.6 — larger mobile typography, icons and touch targets */
+@media (max-width:700px){
+  html{font-size:17px}
+  body{font-size:1rem;line-height:1.65}
+
+  .topbar{min-height:70px;height:auto;padding-inline:14px;gap:10px}
+  .top-title{font-size:1.05rem;line-height:1.35}
+  .icon-btn{width:46px;height:46px;min-width:46px;border-radius:13px;font-size:1.28rem}
+  .app-menu-toggle,.mobile-search-toggle{font-size:1.4rem}
+
+  .container{width:calc(100% - 24px);margin:18px 12px}
+  .page-head{gap:12px;align-items:flex-start}
+  .page-head h1{font-size:1.55rem;line-height:1.3}
+  .page-head p,.muted,.help-text{font-size:.94rem;line-height:1.6}
+  h2{font-size:1.3rem} h3{font-size:1.12rem}
+
+  .card,.panel{font-size:1rem}
+  .stat-card strong,.metric-card strong,.kpi-card strong{font-size:1.42rem}
+  .stat-card small,.metric-card small,.kpi-card small{font-size:.88rem}
+
+  .btn,button,input,select,textarea{font-size:16px}
+  .btn,button:not(.pwa-install-dismiss){min-height:48px}
+  .btn{padding:11px 15px;border-radius:12px}
+  input,select,textarea{min-height:48px;padding:11px 12px;border-radius:11px}
+  textarea{min-height:105px}
+  label{font-size:.98rem;font-weight:700}
+
+  table{font-size:.96rem}
+  th{font-size:.9rem}
+  td,th{padding:12px 10px}
+  .badge,.status-badge{font-size:.86rem;padding:7px 11px}
+
+  body.app-focus-mode .sidebar{width:min(90vw,350px);padding:20px 16px max(20px,env(safe-area-inset-bottom))}
+  .brand{gap:13px;padding-bottom:20px}
+  .brand-mark{width:56px;height:56px;border-radius:16px;font-size:1.3rem}
+  .brand strong{font-size:1.12rem}
+  .brand small{font-size:.84rem;line-height:1.45}
+  .sidebar-close{width:48px;height:48px;font-size:1.9rem}
+  .sidebar nav{gap:5px}
+  .sidebar nav a{min-height:54px;padding:12px 13px;gap:13px;font-size:1.08rem;line-height:1.35}
+  .sidebar nav a>span{font-size:1.05rem}
+  .sidebar nav a::first-letter{font-size:1.2rem}
+  .side-count{font-size:.78rem;min-width:22px;height:22px;line-height:22px}
+  .sidebar-user{padding-top:18px}
+  .sidebar-user strong{font-size:1.08rem}
+  .sidebar-user small,.sidebar-user a{font-size:.94rem}
+
+  .mobile-bottom-nav{min-height:76px;padding-top:7px;column-gap:2px}
+  .mobile-bottom-nav a,.mobile-bottom-nav button{min-height:62px;gap:4px;border-radius:14px}
+  .mobile-bottom-nav span{font-size:1.48rem;line-height:1.05}
+  .mobile-bottom-nav small{font-size:.74rem!important;font-weight:800;line-height:1.2}
+  .mobile-fab{width:62px;height:62px;font-size:2rem}
+
+  .mobile-quick-sheet{font-size:1rem}
+  .mobile-quick-head strong{font-size:1.15rem}
+  .mobile-quick-head small{font-size:.86rem}
+  .mobile-quick-grid>a,.mobile-quick-grid>button{min-height:76px}
+  .mobile-quick-grid span{width:46px;height:46px;font-size:1.35rem}
+  .mobile-quick-grid strong{font-size:.98rem}
+  .mobile-quick-grid small{font-size:.78rem}
+
+  .notification-item strong{font-size:1rem}
+  .notification-item span,.notification-item small{font-size:.86rem}
+  .alert{font-size:.98rem;line-height:1.55}
+}
+
+@media (min-width:701px) and (max-width:1024px){
+  html{font-size:16.5px}
+  .sidebar nav a{font-size:1rem;min-height:49px}
+  .icon-btn{width:44px;height:44px;font-size:1.18rem}
+  .btn,input,select,textarea{font-size:16px}
+}

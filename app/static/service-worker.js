@@ -1,4 +1,4 @@
-const CACHE_NAME = "pharma-erp-shell-v645";
+const CACHE_NAME = "pharma-erp-shell-v646";
 const SHELL = [
   "/static/offline.html",
   "/static/icons/icon-192.png",
