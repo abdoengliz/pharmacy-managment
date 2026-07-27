@@ -3,9 +3,15 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
+import threading
 from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
+
+
+_POSTGRES_POOL = None
+_POSTGRES_POOL_URL: str | None = None
+_POSTGRES_POOL_LOCK = threading.Lock()
 
 
 class CompatRow(Mapping[str, Any], Sequence[Any]):
@@ -273,6 +279,56 @@ class PostgresConnectionCompat:
         return self._raw.cursor()
 
 
+class PooledPostgresConnectionCompat(PostgresConnectionCompat):
+    """Compatibility wrapper that returns warm connections to psycopg_pool."""
+
+    def __init__(self, raw: Any, pool: Any):
+        super().__init__(raw)
+        self._pool = pool
+        self._returned = False
+
+    def close(self) -> None:
+        if self._returned:
+            return
+        try:
+            # Never return an open or failed transaction to the next request.
+            self._raw.rollback()
+        except Exception:
+            pass
+        self._pool.putconn(self._raw)
+        self._returned = True
+
+
+def _postgres_pool(database_url: str, timeout: int):
+    global _POSTGRES_POOL, _POSTGRES_POOL_URL
+    if _POSTGRES_POOL is not None and _POSTGRES_POOL_URL == database_url:
+        return _POSTGRES_POOL
+
+    with _POSTGRES_POOL_LOCK:
+        if _POSTGRES_POOL is not None and _POSTGRES_POOL_URL == database_url:
+            return _POSTGRES_POOL
+        try:
+            from psycopg_pool import ConnectionPool
+        except ImportError as exc:
+            raise RuntimeError("PostgreSQL pooling requires: pip install psycopg_pool") from exc
+
+        max_size = max(1, int(os.environ.get("DB_POOL_MAX", "3")))
+        _POSTGRES_POOL = ConnectionPool(
+            conninfo=database_url,
+            min_size=0,
+            max_size=max_size,
+            timeout=timeout,
+            kwargs={
+                "connect_timeout": timeout,
+                "sslmode": "require",
+                "prepare_threshold": None,
+            },
+            open=True,
+        )
+        _POSTGRES_POOL_URL = database_url
+        return _POSTGRES_POOL
+
+
 _QMARK_RE = re.compile(r"\?")
 
 
@@ -497,13 +553,11 @@ def connect(database_url: str | None, sqlite_path: Path, timeout: int = 30):
             import psycopg
         except ImportError as exc:
             raise RuntimeError("PostgreSQL mode requires: pip install psycopg[binary]") from exc
-        raw = psycopg.connect(
-            database_url,
-            connect_timeout=timeout,
-            sslmode="require",
-            prepare_threshold=None,
-        )
-        return PostgresConnectionCompat(raw)
+        # Reuse warm PostgreSQL connections inside the same Vercel worker.
+        # This avoids a new TLS/database handshake on every page request.
+        pool = _postgres_pool(database_url, timeout)
+        raw = pool.getconn(timeout=timeout)
+        return PooledPostgresConnectionCompat(raw, pool)
 
     db = sqlite3.connect(sqlite_path, timeout=timeout)
     db.row_factory = sqlite3.Row

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sqlite3
 import shutil
+import time
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
@@ -1390,31 +1391,50 @@ def now() -> str:
 
 
 def current_user() -> sqlite3.Row | None:
+    """Return the signed-in user, loading it only once per request."""
+    if hasattr(g, "_current_user_loaded"):
+        return g._current_user
+
     user_id = session.get("user_id")
-    if not user_id:
-        return None
-    return get_db().execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    user = None
+    if user_id:
+        user = get_db().execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+
+    g._current_user = user
+    g._current_user_loaded = True
+    return user
 
 
 def has_permission(permission: str) -> bool:
+    """Check permissions with a request-local cache to avoid duplicate SQL."""
+    cache = getattr(g, "_permission_cache", None)
+    if cache is None:
+        cache = {}
+        g._permission_cache = cache
+    if permission in cache:
+        return cache[permission]
+
     user = current_user()
-    if not user or not user["is_active"]:
-        return False
-    if user["role"] == "admin":
-        return True
-    row = get_db().execute(
-        "SELECT 1 FROM user_permissions WHERE user_id = ? AND permission = ?",
-        (user["id"], permission),
-    ).fetchone()
-    if row is not None:
-        return True
-    if "role_id" in user.keys() and user["role_id"]:
-        row = get_db().execute(
-            "SELECT 1 FROM role_permissions WHERE role_id=? AND permission=?",
-            (user["role_id"], permission),
-        ).fetchone()
-        return row is not None
-    return False
+    allowed = False
+    if user and user["is_active"]:
+        if user["role"] == "admin":
+            allowed = True
+        else:
+            row = get_db().execute(
+                "SELECT 1 FROM user_permissions WHERE user_id = ? AND permission = ?",
+                (user["id"], permission),
+            ).fetchone()
+            if row is not None:
+                allowed = True
+            elif "role_id" in user.keys() and user["role_id"]:
+                row = get_db().execute(
+                    "SELECT 1 FROM role_permissions WHERE role_id=? AND permission=?",
+                    (user["role_id"], permission),
+                ).fetchone()
+                allowed = row is not None
+
+    cache[permission] = allowed
+    return allowed
 
 
 def login_required(view: Callable[..., Any]) -> Callable[..., Any]:
@@ -1557,5 +1577,3 @@ def inject_globals() -> dict[str, Any]:
         "overdue_task_count": overdue_task_count,
         "pending_approval_count": pending_approval_count,
     }
-
-

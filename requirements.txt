@@ -10,3 +10,5 @@ waitress==3.0.2
 gunicorn==23.0.0; platform_system != "Windows"
 
 psycopg[binary]==3.2.9
+
+psycopg_pool==3.2.6
