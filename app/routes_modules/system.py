@@ -256,7 +256,7 @@ def system_version() -> Any:
 @login_required
 @permission_required("manage_system_policies")
 def system_policies_page() -> Any:
-    from .rules import RulesService
+    from ..rules import RulesService
     db = get_db()
     if request.method == "POST":
         rule_key = request.form.get("rule_key", "").strip()
