@@ -168,24 +168,39 @@ def global_search() -> Any:
         for row in db.execute(sql,qparams).fetchall():
             results.append({"group":"الديون الخارجية","title":f"{row['reference_no']} — {row['party_name']}","subtitle":f"{DEBT_TYPES.get(row['debt_type'])} — {float(row['amount']):,.2f} — {row['branch_name']}","url":url_for("external_debt_detail",debt_id=row["id"])})
 
-    # الإيرادات والمصروفات والسدادات
+    # الإيرادات والمصروفات والسدادات: استعلام UNION واحد بدل ثلاث رحلات منفصلة.
+    financial_parts: list[str] = []
+    financial_params: list[Any] = []
+    branch_sql = " AND branch_id=?" if branch_id else ""
+
     financial_specs = [
-        ("الإيرادات", "revenues", "revenue_date", "إيراد", "revenues", "view_revenue"),
-        ("المصروفات", "expenses", "expense_date", "مصروف", "expenses", "view_expenses"),
-        ("السدادات", "supplier_payments", "payment_date", "سداد مورد", "payments", "view_suppliers"),
+        ("الإيرادات", "revenues", "revenue_date", "إيراد", "revenues", has_permission("view_revenue")),
+        ("المصروفات", "expenses", "expense_date", "مصروف", "expenses", has_permission("view_expenses")),
+        ("السدادات", "supplier_payments", "payment_date", "سداد مورد", "payments", has_permission("view_suppliers")),
     ]
-    numeric_query = query.replace(",", "").strip()
-    for group, table, date_col, label, endpoint, permission in financial_specs:
-        if not has_permission(permission):
+    for group, table, date_col, label, endpoint, allowed in financial_specs:
+        if not allowed:
             continue
-        sql = f"SELECT id,branch_id,amount,{date_col} AS tx_date,notes FROM {table} WHERE (CAST(id AS TEXT) LIKE ? OR CAST(amount AS TEXT) LIKE ? OR COALESCE(notes,'') LIKE ?)"
-        params = [like, like, like]
+        financial_parts.append(
+            f"SELECT id,branch_id,amount,{date_col} AS tx_date,notes,"
+            "? AS result_group,? AS result_label,? AS result_endpoint "
+            f"FROM {table} WHERE (CAST(id AS TEXT) LIKE ? OR CAST(amount AS TEXT) LIKE ? OR COALESCE(notes,'') LIKE ?)"
+            + branch_sql
+            + " ORDER BY id DESC LIMIT 20"
+        )
+        financial_params.extend([group, label, endpoint, like, like, like])
         if branch_id:
-            sql += " AND branch_id=?"
-            params.append(branch_id)
-        sql += " ORDER BY id DESC LIMIT 20"
-        for row in db.execute(sql, params).fetchall():
-            results.append({"group":group,"title":f"{label} #{row['id']} — {float(row['amount']):,.2f}","subtitle":f"التاريخ: {row['tx_date']} — {row['notes'] or 'بدون ملاحظات'}","url":url_for(endpoint)})
+            financial_params.append(branch_id)
+
+    if financial_parts:
+        union_sql = " UNION ALL ".join(f"SELECT * FROM ({part}) AS financial_search" for part in financial_parts)
+        for row in db.execute(union_sql, financial_params).fetchall():
+            results.append({
+                "group": row["result_group"],
+                "title": f"{row['result_label']} #{row['id']} — {float(row['amount']):,.2f}",
+                "subtitle": f"التاريخ: {row['tx_date']} — {row['notes'] or 'بدون ملاحظات'}",
+                "url": url_for(row["result_endpoint"]),
+            })
 
     return render_template("search_results.html", query=query, results=results)
 
