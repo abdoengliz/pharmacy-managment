@@ -16,7 +16,7 @@ globals().update({name: value for name, value in vars(_common).items() if not na
 # cache dependency. Values are isolated by user, period and selected branch.
 _DASHBOARD_CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
 _DASHBOARD_CACHE_LOCK = threading.Lock()
-_DASHBOARD_CACHE_TTL = max(0, int(os.environ.get("DASHBOARD_CACHE_TTL", "15") or 15))
+_DASHBOARD_CACHE_TTL = max(0, int(os.environ.get("DASHBOARD_CACHE_TTL", "45") or 45))
 
 def _dashboard_cache_get(key: tuple[Any, ...]) -> dict[str, Any] | None:
     if _DASHBOARD_CACHE_TTL <= 0:
@@ -31,6 +31,23 @@ def _dashboard_cache_get(key: tuple[Any, ...]) -> dict[str, Any] | None:
             _DASHBOARD_CACHE.pop(key, None)
             return None
         return payload.copy()
+
+_DASHBOARD_REFERENCE_CACHE: dict[str, tuple[float, Any]] = {}
+_DASHBOARD_REFERENCE_TTL = max(15, int(os.environ.get("DASHBOARD_REFERENCE_TTL", "180") or 180))
+
+def _dashboard_reference_get(key: str) -> Any | None:
+    current = time.monotonic()
+    with _DASHBOARD_CACHE_LOCK:
+        cached = _DASHBOARD_REFERENCE_CACHE.get(key)
+        if cached is None or cached[0] <= current:
+            _DASHBOARD_REFERENCE_CACHE.pop(key, None)
+            return None
+        return cached[1]
+
+def _dashboard_reference_put(key: str, value: Any) -> Any:
+    with _DASHBOARD_CACHE_LOCK:
+        _DASHBOARD_REFERENCE_CACHE[key] = (time.monotonic() + _DASHBOARD_REFERENCE_TTL, value)
+    return value
 
 def _dashboard_cache_put(key: tuple[Any, ...], payload: dict[str, Any]) -> None:
     if _DASHBOARD_CACHE_TTL <= 0:
@@ -235,7 +252,11 @@ def dashboard() -> Any:
         period_label = "الشهر الحالي"
 
     user = current_user()
-    available_branches = db.execute("SELECT id,name FROM branches ORDER BY name").fetchall()
+    available_branches = _dashboard_reference_get("branches")
+    if available_branches is None:
+        available_branches = _dashboard_reference_put(
+            "branches", db.execute("SELECT id,name FROM branches ORDER BY name").fetchall()
+        )
     selected_branch_id: int | None = None
     if user and user["role"] != "admin" and user["branch_id"]:
         selected_branch_id = int(user["branch_id"])
@@ -300,16 +321,21 @@ def dashboard() -> Any:
     previous_net = previous_revenue - previous_expense - previous_payments
 
     # One round trip for the six administration counters.
-    admin_row = db.execute(
-        "SELECT "
-        "(SELECT COUNT(*) FROM users WHERE is_active=1) users,"
-        "(SELECT COUNT(*) FROM employees WHERE is_active=1) employees,"
-        "(SELECT COUNT(*) FROM branches) branches,"
-        "(SELECT COUNT(*) FROM departments WHERE is_active=1) departments,"
-        "(SELECT COUNT(*) FROM jobs WHERE is_active=1) jobs,"
-        "(SELECT COUNT(*) FROM roles WHERE is_active=1) roles"
-    ).fetchone()
-    admin_stats = {key: admin_row[key] for key in ("users", "employees", "branches", "departments", "jobs", "roles")}
+    admin_stats = _dashboard_reference_get("admin_stats")
+    if admin_stats is None:
+        admin_row = db.execute(
+            "SELECT "
+            "(SELECT COUNT(*) FROM users WHERE is_active=1) users,"
+            "(SELECT COUNT(*) FROM employees WHERE is_active=1) employees,"
+            "(SELECT COUNT(*) FROM branches) branches,"
+            "(SELECT COUNT(*) FROM departments WHERE is_active=1) departments,"
+            "(SELECT COUNT(*) FROM jobs WHERE is_active=1) jobs,"
+            "(SELECT COUNT(*) FROM roles WHERE is_active=1) roles"
+        ).fetchone()
+        admin_stats = _dashboard_reference_put(
+            "admin_stats",
+            {key: admin_row[key] for key in ("users", "employees", "branches", "departments", "jobs", "roles")},
+        )
 
     recent = db.execute(
         """SELECT a.*, COALESCE(u.full_name,'النظام') user_name
@@ -338,11 +364,9 @@ def dashboard() -> Any:
     latest_backup = backups[0] if backups else None
     latest_backup_at = datetime.fromtimestamp(latest_backup.stat().st_mtime) if latest_backup else None
     backup_age_days = (datetime.now() - latest_backup_at).days if latest_backup_at else None
+    # All preceding dashboard queries already prove the active connection is healthy;
+    # avoid an extra network round trip solely for SELECT 1.
     db_ok = True
-    try:
-        db.execute("SELECT 1").fetchone()
-    except Exception:
-        db_ok = False
     health_summary = {
         "database": db_ok,
         "audit": db_ok,

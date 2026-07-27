@@ -3,11 +3,12 @@ from __future__ import annotations
 import logging
 import os
 import secrets
+import time
 from datetime import timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for, send_from_directory
+from flask import Flask, flash, g, redirect, render_template, request, session, url_for, send_from_directory
 
 
 def _env_flag(name: str, default: bool = False) -> bool:
@@ -67,6 +68,15 @@ def _csrf_token() -> str:
     return token
 
 
+
+
+@app.before_request
+def start_request_timer():
+    """Record lightweight timing data for Server-Timing diagnostics."""
+    g._request_started_at = time.perf_counter()
+    g._db_query_count = 0
+    g._db_query_seconds = 0.0
+
 @app.before_request
 def csrf_protect():
     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
@@ -97,6 +107,20 @@ def inject_security_helpers():
 
 @app.after_request
 def security_headers(response):
+    # Versioned static resources can be reused immediately by the browser/PWA.
+    # HTML and API responses remain private/no-cache so users never see stale data.
+    if request.endpoint == "static" or request.path.startswith("/static/"):
+        response.headers.setdefault("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800")
+    elif request.method == "GET" and response.mimetype == "text/html":
+        response.headers.setdefault("Cache-Control", "private, no-cache")
+
+    started = getattr(g, "_request_started_at", None)
+    if started is not None:
+        total_ms = (time.perf_counter() - started) * 1000
+        db_ms = float(getattr(g, "_db_query_seconds", 0.0)) * 1000
+        db_count = int(getattr(g, "_db_query_count", 0))
+        response.headers["Server-Timing"] = f"app;dur={total_ms:.1f}, db;dur={db_ms:.1f};desc=\"{db_count} queries\""
+
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
     response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")

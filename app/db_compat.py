@@ -4,6 +4,7 @@ import os
 import re
 import sqlite3
 import threading
+import time
 from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
@@ -166,6 +167,7 @@ class PostgresConnectionCompat:
             raise
 
         cur = self._raw.cursor()
+        query_started = time.perf_counter()
         try:
             cur.execute(translated, params)
         except Exception as exc:
@@ -189,6 +191,14 @@ class PostgresConnectionCompat:
             except ImportError:
                 pass
             raise
+        finally:
+            try:
+                from flask import g, has_request_context
+                if has_request_context():
+                    g._db_query_count = int(getattr(g, "_db_query_count", 0)) + 1
+                    g._db_query_seconds = float(getattr(g, "_db_query_seconds", 0.0)) + (time.perf_counter() - query_started)
+            except Exception:
+                pass
         compat = PostgresCursorCompat(self, cur)
         if captures_id:
             row = cur.fetchone()
