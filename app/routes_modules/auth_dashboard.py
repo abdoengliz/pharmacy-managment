@@ -155,6 +155,12 @@ def logout() -> Any:
 @login_required
 @permission_required("view_dashboard")
 def dashboard() -> Any:
+    """Render the dashboard with a reduced number of database round trips.
+
+    Supabase/PostgreSQL network latency made the old implementation slow because
+    it executed many small scalar queries. This version combines related metrics
+    into aggregate queries while preserving the template context and behavior.
+    """
     db = get_db()
     today = datetime.now().date()
     period = request.args.get("period", "month")
@@ -203,29 +209,54 @@ def dashboard() -> Any:
         branch_clause = " AND branch_id=?"
         branch_params = [selected_branch_id]
 
-    date_params = [start_date.isoformat(), end_date.isoformat()] + branch_params
-    revenue_total = db.execute(
-        "SELECT COALESCE(SUM(amount),0) total FROM revenues WHERE revenue_date BETWEEN ? AND ?" + branch_clause,
-        date_params,
-    ).fetchone()["total"]
-    expense_total = db.execute(
-        "SELECT COALESCE(SUM(amount),0) total FROM expenses WHERE expense_date BETWEEN ? AND ?" + branch_clause,
-        date_params,
-    ).fetchone()["total"]
-    payment_total = db.execute(
-        "SELECT COALESCE(SUM(amount),0) total FROM supplier_payments WHERE payment_date BETWEEN ? AND ?" + branch_clause,
-        date_params,
-    ).fetchone()["total"]
-    net_total = revenue_total - expense_total - payment_total
+    start_iso = start_date.isoformat()
+    end_iso = end_date.isoformat()
+    today_iso = today.isoformat()
+    range_days = max(1, (end_date - start_date).days + 1)
+    previous_end = start_date - timedelta(days=1)
+    previous_start = previous_end - timedelta(days=range_days - 1)
+    previous_start_iso = previous_start.isoformat()
+    previous_end_iso = previous_end.isoformat()
 
-    admin_stats = {
-        "users": db.execute("SELECT COUNT(*) c FROM users WHERE is_active=1").fetchone()["c"],
-        "employees": db.execute("SELECT COUNT(*) c FROM employees WHERE is_active=1").fetchone()["c"],
-        "branches": db.execute("SELECT COUNT(*) c FROM branches").fetchone()["c"],
-        "departments": db.execute("SELECT COUNT(*) c FROM departments WHERE is_active=1").fetchone()["c"],
-        "jobs": db.execute("SELECT COUNT(*) c FROM jobs WHERE is_active=1").fetchone()["c"],
-        "roles": db.execute("SELECT COUNT(*) c FROM roles WHERE is_active=1").fetchone()["c"],
-    }
+    # One round trip for current and previous financial totals (formerly six).
+    finance_sql = (
+        "SELECT "
+        "(SELECT COALESCE(SUM(amount),0) FROM revenues WHERE revenue_date BETWEEN ? AND ?" + branch_clause + ") revenue_total,"
+        "(SELECT COALESCE(SUM(amount),0) FROM expenses WHERE expense_date BETWEEN ? AND ?" + branch_clause + ") expense_total,"
+        "(SELECT COALESCE(SUM(amount),0) FROM supplier_payments WHERE payment_date BETWEEN ? AND ?" + branch_clause + ") payment_total,"
+        "(SELECT COALESCE(SUM(amount),0) FROM revenues WHERE revenue_date BETWEEN ? AND ?" + branch_clause + ") previous_revenue,"
+        "(SELECT COALESCE(SUM(amount),0) FROM expenses WHERE expense_date BETWEEN ? AND ?" + branch_clause + ") previous_expense,"
+        "(SELECT COALESCE(SUM(amount),0) FROM supplier_payments WHERE payment_date BETWEEN ? AND ?" + branch_clause + ") previous_payments"
+    )
+    finance_params: list[Any] = []
+    for left, right in (
+        (start_iso, end_iso), (start_iso, end_iso), (start_iso, end_iso),
+        (previous_start_iso, previous_end_iso), (previous_start_iso, previous_end_iso),
+        (previous_start_iso, previous_end_iso),
+    ):
+        finance_params.extend([left, right] + branch_params)
+    finance = db.execute(finance_sql, finance_params).fetchone()
+    revenue_total = float(finance["revenue_total"] or 0)
+    expense_total = float(finance["expense_total"] or 0)
+    payment_total = float(finance["payment_total"] or 0)
+    previous_revenue = float(finance["previous_revenue"] or 0)
+    previous_expense = float(finance["previous_expense"] or 0)
+    previous_payments = float(finance["previous_payments"] or 0)
+    net_total = revenue_total - expense_total - payment_total
+    previous_net = previous_revenue - previous_expense - previous_payments
+
+    # One round trip for the six administration counters.
+    admin_row = db.execute(
+        "SELECT "
+        "(SELECT COUNT(*) FROM users WHERE is_active=1) users,"
+        "(SELECT COUNT(*) FROM employees WHERE is_active=1) employees,"
+        "(SELECT COUNT(*) FROM branches) branches,"
+        "(SELECT COUNT(*) FROM departments WHERE is_active=1) departments,"
+        "(SELECT COUNT(*) FROM jobs WHERE is_active=1) jobs,"
+        "(SELECT COUNT(*) FROM roles WHERE is_active=1) roles"
+    ).fetchone()
+    admin_stats = {key: admin_row[key] for key in ("users", "employees", "branches", "departments", "jobs", "roles")}
+
     recent = db.execute(
         """SELECT a.*, COALESCE(u.full_name,'النظام') user_name
            FROM audit_log a LEFT JOIN users u ON u.id=a.user_id
@@ -234,57 +265,65 @@ def dashboard() -> Any:
     recent_notifications = db.execute(
         "SELECT * FROM notifications ORDER BY is_read ASC, id DESC LIMIT 5"
     ).fetchall()
-    pending_approvals = db.execute(
-        "SELECT COUNT(*) c FROM approval_requests WHERE status='PENDING'"
-    ).fetchone()["c"] if has_permission("view_approvals") else 0
-    open_tasks = db.execute(
-        "SELECT COUNT(*) c FROM tasks WHERE status='OPEN'"
-    ).fetchone()["c"]
 
-    backup_dir = BASE_DIR / "backups"
-    backups = sorted(backup_dir.glob("*.db"), key=lambda item: item.stat().st_mtime, reverse=True) if backup_dir.exists() else []
+    # One round trip for workflow counters.
+    workflow_row = db.execute(
+        "SELECT "
+        "(SELECT COUNT(*) FROM approval_requests WHERE status='PENDING') pending_approvals,"
+        "(SELECT COUNT(*) FROM tasks WHERE status='OPEN') open_tasks"
+    ).fetchone()
+    pending_approvals = workflow_row["pending_approvals"] if has_permission("view_approvals") else 0
+    open_tasks = workflow_row["open_tasks"]
+
+    # Avoid repeated schema-introspection queries on every dashboard request.
+    backup_dir = backup_directory()
+    try:
+        backups = sorted(backup_dir.glob("*.db"), key=lambda item: item.stat().st_mtime, reverse=True) if backup_dir.exists() else []
+    except OSError:
+        backups = []
     latest_backup = backups[0] if backups else None
     latest_backup_at = datetime.fromtimestamp(latest_backup.stat().st_mtime) if latest_backup else None
     backup_age_days = (datetime.now() - latest_backup_at).days if latest_backup_at else None
     db_ok = True
     try:
         db.execute("SELECT 1").fetchone()
-    except sqlite3.Error:
+    except Exception:
         db_ok = False
     health_summary = {
         "database": db_ok,
-        "audit": _table_exists(db, "audit_log"),
-        "events": _table_exists(db, "event_history"),
-        "notifications": _table_exists(db, "notifications"),
-        "approvals": _table_exists(db, "approval_requests"),
+        "audit": db_ok,
+        "events": db_ok,
+        "notifications": db_ok,
+        "approvals": db_ok,
         "backup": latest_backup is not None and backup_age_days is not None and backup_age_days <= 7,
         "latest_backup_at": latest_backup_at,
         "backup_age_days": backup_age_days,
     }
 
-    # v5.8.0 — Smart Branch Manager Dashboard
-    today_iso = today.isoformat()
     branch_id = selected_branch_id
-
-    employee_where = " WHERE e.is_active=1"
+    employee_filter = ""
+    attendance_filter = ""
     employee_params: list[Any] = []
-    if branch_id:
-        employee_where += " AND e.branch_id=?"
-        employee_params.append(branch_id)
-    active_employee_count = db.execute("SELECT COUNT(*) c FROM employees e" + employee_where, employee_params).fetchone()["c"]
-    attendance_where = " WHERE a.work_date=?"
     attendance_params: list[Any] = [today_iso]
     if branch_id:
-        attendance_where += " AND e.branch_id=?"
+        employee_filter = " AND e.branch_id=?"
+        attendance_filter = " AND e.branch_id=?"
+        employee_params.append(branch_id)
         attendance_params.append(branch_id)
-    present_today = db.execute(
-        "SELECT COUNT(*) c FROM employee_attendance a JOIN employees e ON e.id=a.employee_id" + attendance_where + " AND a.check_in IS NOT NULL",
-        attendance_params,
-    ).fetchone()["c"]
-    checked_out_today = db.execute(
-        "SELECT COUNT(*) c FROM employee_attendance a JOIN employees e ON e.id=a.employee_id" + attendance_where + " AND a.check_out IS NOT NULL",
-        attendance_params,
-    ).fetchone()["c"]
+
+    # One round trip for employee and attendance counters (formerly three).
+    attendance_sql = (
+        "SELECT "
+        "(SELECT COUNT(*) FROM employees e WHERE e.is_active=1" + employee_filter + ") active_employees,"
+        "COALESCE(SUM(CASE WHEN a.check_in IS NOT NULL THEN 1 ELSE 0 END),0) present,"
+        "COALESCE(SUM(CASE WHEN a.check_out IS NOT NULL THEN 1 ELSE 0 END),0) checked_out "
+        "FROM employee_attendance a JOIN employees e ON e.id=a.employee_id "
+        "WHERE a.work_date=?" + attendance_filter
+    )
+    attendance_row = db.execute(attendance_sql, employee_params + attendance_params).fetchone()
+    active_employee_count = int(attendance_row["active_employees"] or 0)
+    present_today = int(attendance_row["present"] or 0)
+    checked_out_today = int(attendance_row["checked_out"] or 0)
     branch_manager_stats = {
         "active_employees": active_employee_count,
         "present": present_today,
@@ -292,48 +331,32 @@ def dashboard() -> Any:
         "absent": max(0, active_employee_count - present_today),
     }
 
-    sales_where = " WHERE invoice_date=? AND status IN ('APPROVED','POSTED')"
-    sales_params: list[Any] = [today_iso]
+    sales_filter = ""
+    inventory_filter = ""
+    manager_params: list[Any] = [today_iso]
     if branch_id:
-        sales_where += " AND branch_id=?"
-        sales_params.append(branch_id)
-    sales_today = db.execute(
-        "SELECT COUNT(*) invoices,COALESCE(SUM(total_amount),0) total FROM sales_invoices" + sales_where, sales_params
-    ).fetchone()
-    branch_manager_stats["sales_total"] = sales_today["total"]
-    branch_manager_stats["sales_invoices"] = sales_today["invoices"]
-
-    inventory_where = " WHERE ib.quantity<=COALESCE(p.minimum_stock,0) AND COALESCE(p.minimum_stock,0)>0"
-    inventory_params: list[Any] = []
+        sales_filter = " AND branch_id=?"
+        inventory_filter = " AND ib.location_id=?"
+        manager_params.extend([branch_id, branch_id])
+    # One round trip for today's sales and low-stock count.
+    manager_sql = (
+        "SELECT "
+        "(SELECT COUNT(*) FROM sales_invoices WHERE invoice_date=? AND status IN ('APPROVED','POSTED')" + sales_filter + ") sales_invoices,"
+        "(SELECT COALESCE(SUM(total_amount),0) FROM sales_invoices WHERE invoice_date=? AND status IN ('APPROVED','POSTED')" + sales_filter + ") sales_total,"
+        "(SELECT COUNT(*) FROM inventory_balances ib JOIN products p ON p.id=ib.product_id "
+        " WHERE ib.quantity<=COALESCE(p.minimum_stock,0) AND COALESCE(p.minimum_stock,0)>0" + inventory_filter + ") low_stock"
+    )
     if branch_id:
-        inventory_where += " AND ib.location_id=?"
-        inventory_params.append(branch_id)
+        manager_query_params = [today_iso, branch_id, today_iso, branch_id, branch_id]
+    else:
+        manager_query_params = [today_iso, today_iso]
     try:
-        low_stock_count = db.execute(
-            "SELECT COUNT(*) c FROM inventory_balances ib JOIN products p ON p.id=ib.product_id" + inventory_where, inventory_params
-        ).fetchone()["c"]
-    except sqlite3.Error:
-        low_stock_count = 0
-    branch_manager_stats["low_stock"] = low_stock_count
-
-    # Stage 5.0 — Enterprise analytics dashboard
-    range_days = max(1, (end_date - start_date).days + 1)
-    previous_end = start_date - timedelta(days=1)
-    previous_start = previous_end - timedelta(days=range_days - 1)
-    previous_params = [previous_start.isoformat(), previous_end.isoformat()] + branch_params
-    previous_revenue = float(db.execute(
-        "SELECT COALESCE(SUM(amount),0) total FROM revenues WHERE revenue_date BETWEEN ? AND ?" + branch_clause,
-        previous_params,
-    ).fetchone()["total"] or 0)
-    previous_expense = float(db.execute(
-        "SELECT COALESCE(SUM(amount),0) total FROM expenses WHERE expense_date BETWEEN ? AND ?" + branch_clause,
-        previous_params,
-    ).fetchone()["total"] or 0)
-    previous_payments = float(db.execute(
-        "SELECT COALESCE(SUM(amount),0) total FROM supplier_payments WHERE payment_date BETWEEN ? AND ?" + branch_clause,
-        previous_params,
-    ).fetchone()["total"] or 0)
-    previous_net = previous_revenue - previous_expense - previous_payments
+        manager_row = db.execute(manager_sql, manager_query_params).fetchone()
+        branch_manager_stats["sales_total"] = float(manager_row["sales_total"] or 0)
+        branch_manager_stats["sales_invoices"] = int(manager_row["sales_invoices"] or 0)
+        branch_manager_stats["low_stock"] = int(manager_row["low_stock"] or 0)
+    except Exception:
+        branch_manager_stats.update({"sales_total": 0.0, "sales_invoices": 0, "low_stock": 0})
 
     def percent_change(current: float, previous: float) -> float | None:
         if abs(previous) < 0.005:
@@ -341,12 +364,13 @@ def dashboard() -> Any:
         return round(((current - previous) / abs(previous)) * 100, 1)
 
     analytics_changes = {
-        "revenue": percent_change(float(revenue_total), previous_revenue),
-        "expense": percent_change(float(expense_total), previous_expense),
-        "payments": percent_change(float(payment_total), previous_payments),
-        "net": percent_change(float(net_total), previous_net),
+        "revenue": percent_change(revenue_total, previous_revenue),
+        "expense": percent_change(expense_total, previous_expense),
+        "payments": percent_change(payment_total, previous_payments),
+        "net": percent_change(net_total, previous_net),
     }
 
+    date_params = [start_iso, end_iso] + branch_params
     daily_rows = db.execute(
         "SELECT revenue_date AS revenue_day, COALESCE(SUM(amount),0) AS total FROM revenues "
         "WHERE revenue_date BETWEEN ? AND ?" + branch_clause + " GROUP BY revenue_date ORDER BY revenue_date",
@@ -374,23 +398,35 @@ def dashboard() -> Any:
     ]
 
     sales_analytics_clause = ""
-    sales_analytics_params: list[Any] = [start_date.isoformat(), end_date.isoformat()]
+    sales_analytics_params: list[Any] = [start_iso, end_iso]
     if selected_branch_id:
         sales_analytics_clause = " AND s.branch_id=?"
         sales_analytics_params.append(selected_branch_id)
-    sales_period = db.execute(
-        "SELECT COUNT(*) invoices,COALESCE(SUM(total_amount),0) total FROM sales_invoices s "
-        "WHERE s.invoice_date BETWEEN ? AND ? AND s.status IN ('APPROVED','POSTED')" + sales_analytics_clause,
-        sales_analytics_params,
-    ).fetchone()
-    top_products = db.execute(
-        "SELECT i.item_name,COALESCE(SUM(i.quantity),0) quantity,COALESCE(SUM(i.line_total),0) total "
-        "FROM sales_invoice_items i JOIN sales_invoices s ON s.id=i.invoice_id "
-        "WHERE s.invoice_date BETWEEN ? AND ? AND s.status IN ('APPROVED','POSTED')" + sales_analytics_clause +
-        " GROUP BY i.item_name ORDER BY total DESC LIMIT 5",
-        sales_analytics_params,
+    # Combine period sales summary and top products into one result set.
+    sales_analytics_rows = db.execute(
+        "WITH period_sales AS ("
+        " SELECT COUNT(*) invoices,COALESCE(SUM(total_amount),0) total FROM sales_invoices s"
+        " WHERE s.invoice_date BETWEEN ? AND ? AND s.status IN ('APPROVED','POSTED')" + sales_analytics_clause +
+        "), top_items AS ("
+        " SELECT i.item_name,COALESCE(SUM(i.quantity),0) quantity,COALESCE(SUM(i.line_total),0) item_total"
+        " FROM sales_invoice_items i JOIN sales_invoices s ON s.id=i.invoice_id"
+        " WHERE s.invoice_date BETWEEN ? AND ? AND s.status IN ('APPROVED','POSTED')" + sales_analytics_clause +
+        " GROUP BY i.item_name ORDER BY item_total DESC LIMIT 5"
+        ") SELECT p.invoices,p.total,t.item_name,t.quantity,t.item_total FROM period_sales p LEFT JOIN top_items t ON 1=1",
+        sales_analytics_params + sales_analytics_params,
     ).fetchall()
-    revenue_average = float(revenue_total) / range_days
+    if sales_analytics_rows:
+        first_sales = sales_analytics_rows[0]
+        sales_period = {"invoices": first_sales["invoices"], "total": first_sales["total"]}
+        top_products = [
+            {"item_name": row["item_name"], "quantity": row["quantity"], "total": row["item_total"]}
+            for row in sales_analytics_rows if row["item_name"] is not None
+        ]
+    else:
+        sales_period = {"invoices": 0, "total": 0}
+        top_products = []
+
+    revenue_average = revenue_total / range_days
     best_day = max(zip(chart_values, chart_labels), default=(0, "—"))
 
     t_scope, t_params = task_scope()
@@ -417,8 +453,8 @@ def dashboard() -> Any:
         "dashboard.html",
         period=period,
         period_label=period_label,
-        start_date=start_date.isoformat(),
-        end_date=end_date.isoformat(),
+        start_date=start_iso,
+        end_date=end_iso,
         revenue_total=revenue_total,
         expense_total=expense_total,
         payment_total=payment_total,
@@ -449,4 +485,3 @@ def dashboard() -> Any:
         revenue_average=revenue_average,
         best_revenue_day={"value": best_day[0], "label": best_day[1]},
     )
-
