@@ -67,9 +67,6 @@ def _dashboard_cache_put(key: tuple[Any, ...], payload: dict[str, Any]) -> None:
 @app.route("/login", methods=["GET", "POST"])
 def login() -> Any:
     db = get_db()
-    active_users = db.execute(
-        "SELECT username, full_name FROM users WHERE is_active=1 ORDER BY full_name, username"
-    ).fetchall()
     selected_username = request.form.get("username", "").strip() if request.method == "POST" else ""
     if request.method == "POST":
         password = request.form.get("password", "")
@@ -83,6 +80,12 @@ def login() -> Any:
                 return redirect(url_for("change_initial_password"))
             return redirect(url_for("dashboard"))
         flash("اسم المستخدم أو كلمة المرور غير صحيحة.", "danger")
+
+    # The username list is only needed when the login page is actually rendered.
+    # A successful POST now avoids this extra Supabase round trip.
+    active_users = db.execute(
+        "SELECT username, full_name FROM users WHERE is_active=1 ORDER BY full_name, username"
+    ).fetchall()
     return render_template(
         "login.html",
         active_users=active_users,
@@ -449,12 +452,21 @@ def dashboard() -> Any:
     }
 
     date_params = [start_iso, end_iso] + branch_params
-    daily_rows = db.execute(
-        "SELECT revenue_date AS revenue_day, COALESCE(SUM(amount),0) AS total FROM revenues "
-        "WHERE revenue_date BETWEEN ? AND ?" + branch_clause + " GROUP BY revenue_date ORDER BY revenue_date",
-        date_params,
+    # Daily chart and payment-method breakdown share the same date/branch filter.
+    # UNION ALL returns both datasets in one PostgreSQL network round trip.
+    revenue_chart_rows = db.execute(
+        "SELECT 'DAY' row_type, CAST(revenue_date AS TEXT) row_key, COALESCE(SUM(amount),0) total "
+        "FROM revenues WHERE revenue_date BETWEEN ? AND ?" + branch_clause +
+        " GROUP BY revenue_date UNION ALL "
+        "SELECT 'METHOD' row_type, COALESCE(payment_method,'') row_key, COALESCE(SUM(amount),0) total "
+        "FROM revenues WHERE revenue_date BETWEEN ? AND ?" + branch_clause +
+        " GROUP BY payment_method",
+        date_params + date_params,
     ).fetchall()
-    daily_map = {str(row["revenue_day"])[:10]: float(row["total"] or 0) for row in daily_rows}
+    daily_map = {
+        str(row["row_key"])[:10]: float(row["total"] or 0)
+        for row in revenue_chart_rows if row["row_type"] == "DAY"
+    }
     chart_labels: list[str] = []
     chart_values: list[float] = []
     cursor_day = start_date
@@ -464,16 +476,15 @@ def dashboard() -> Any:
         chart_values.append(round(daily_map.get(iso_day, 0), 2))
         cursor_day += timedelta(days=1)
 
-    payment_rows = db.execute(
-        "SELECT payment_method,COALESCE(SUM(amount),0) total FROM revenues "
-        "WHERE revenue_date BETWEEN ? AND ?" + branch_clause + " GROUP BY payment_method ORDER BY total DESC",
-        date_params,
-    ).fetchall()
     payment_method_names = {"CASH": "نقدي", "CARD": "بطاقة", "BANK": "تحويل مصرفي", "CREDIT": "آجل", "POS": "شبكة"}
-    payment_breakdown = [
-        {"name": payment_method_names.get(str(row["payment_method"]).upper(), str(row["payment_method"])), "value": float(row["total"] or 0)}
-        for row in payment_rows
-    ]
+    payment_breakdown = sorted(
+        [
+            {"name": payment_method_names.get(str(row["row_key"]).upper(), str(row["row_key"])), "value": float(row["total"] or 0)}
+            for row in revenue_chart_rows if row["row_type"] == "METHOD"
+        ],
+        key=lambda item: item["value"],
+        reverse=True,
+    )
 
     sales_analytics_clause = ""
     sales_analytics_params: list[Any] = [start_iso, end_iso]
