@@ -1,10 +1,51 @@
 from __future__ import annotations
 
+import os
+import threading
+import time
+
 # Load the complete shared namespace, including private helper names.
 from . import common as _common
 globals().update({name: value for name, value in vars(_common).items() if not name.startswith("__")})
 
 """Flask routes for the auth dashboard area."""
+
+# Short-lived, process-local dashboard cache. Vercel instances reuse the same
+# Python process for warm requests, so this avoids repeating the heaviest
+# Supabase aggregates during rapid navigation without introducing an external
+# cache dependency. Values are isolated by user, period and selected branch.
+_DASHBOARD_CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
+_DASHBOARD_CACHE_LOCK = threading.Lock()
+_DASHBOARD_CACHE_TTL = max(0, int(os.environ.get("DASHBOARD_CACHE_TTL", "15") or 15))
+
+def _dashboard_cache_get(key: tuple[Any, ...]) -> dict[str, Any] | None:
+    if _DASHBOARD_CACHE_TTL <= 0:
+        return None
+    current = time.monotonic()
+    with _DASHBOARD_CACHE_LOCK:
+        cached = _DASHBOARD_CACHE.get(key)
+        if cached is None:
+            return None
+        expires_at, payload = cached
+        if expires_at <= current:
+            _DASHBOARD_CACHE.pop(key, None)
+            return None
+        return payload.copy()
+
+def _dashboard_cache_put(key: tuple[Any, ...], payload: dict[str, Any]) -> None:
+    if _DASHBOARD_CACHE_TTL <= 0:
+        return
+    current = time.monotonic()
+    with _DASHBOARD_CACHE_LOCK:
+        # Keep memory bounded on long-lived non-serverless workers.
+        if len(_DASHBOARD_CACHE) >= 128:
+            expired = [item_key for item_key, (expiry, _) in _DASHBOARD_CACHE.items() if expiry <= current]
+            for item_key in expired:
+                _DASHBOARD_CACHE.pop(item_key, None)
+            if len(_DASHBOARD_CACHE) >= 128:
+                oldest_key = min(_DASHBOARD_CACHE, key=lambda item_key: _DASHBOARD_CACHE[item_key][0])
+                _DASHBOARD_CACHE.pop(oldest_key, None)
+        _DASHBOARD_CACHE[key] = (current + _DASHBOARD_CACHE_TTL, payload.copy())
 
 @app.route("/login", methods=["GET", "POST"])
 def login() -> Any:
@@ -202,6 +243,19 @@ def dashboard() -> Any:
         requested_branch = request.args.get("branch_id", "").strip()
         if requested_branch.isdigit():
             selected_branch_id = int(requested_branch)
+
+    cache_key = (
+        int(user["id"]),
+        period,
+        start_date.isoformat(),
+        end_date.isoformat(),
+        selected_branch_id,
+        int(session.get("dashboard_cache_nonce", 0) or 0),
+    )
+    cached_context = _dashboard_cache_get(cache_key)
+    if cached_context is not None:
+        cached_context["dashboard_cache_hit"] = True
+        return render_template("dashboard.html", **cached_context)
 
     branch_clause = ""
     branch_params: list[Any] = []
@@ -449,39 +503,41 @@ def dashboard() -> Any:
         note_params.append(branch_id)
     quick_notes = db.execute(note_sql + " ORDER BY id DESC LIMIT 20", note_params).fetchall()
 
-    return render_template(
-        "dashboard.html",
-        period=period,
-        period_label=period_label,
-        start_date=start_iso,
-        end_date=end_iso,
-        revenue_total=revenue_total,
-        expense_total=expense_total,
-        payment_total=payment_total,
-        net_total=net_total,
-        admin_stats=admin_stats,
-        recent=recent,
-        recent_notifications=recent_notifications,
-        pending_approvals=pending_approvals,
-        dashboard_open_tasks=open_tasks,
-        health_summary=health_summary,
-        branch_manager_stats=branch_manager_stats,
-        manager_tasks=manager_tasks,
-        task_summary=task_summary,
-        quick_notes=quick_notes,
-        dashboard_today=today_iso,
-        available_branches=available_branches,
-        selected_branch_id=selected_branch_id,
-        analytics_changes=analytics_changes,
-        previous_revenue=previous_revenue,
-        previous_expense=previous_expense,
-        previous_payments=previous_payments,
-        previous_net=previous_net,
-        chart_labels=chart_labels,
-        chart_values=chart_values,
-        payment_breakdown=payment_breakdown,
-        sales_period=sales_period,
-        top_products=top_products,
-        revenue_average=revenue_average,
-        best_revenue_day={"value": best_day[0], "label": best_day[1]},
-    )
+    dashboard_context = {
+        "period": period,
+        "period_label": period_label,
+        "start_date": start_iso,
+        "end_date": end_iso,
+        "revenue_total": revenue_total,
+        "expense_total": expense_total,
+        "payment_total": payment_total,
+        "net_total": net_total,
+        "admin_stats": admin_stats,
+        "recent": recent,
+        "recent_notifications": recent_notifications,
+        "pending_approvals": pending_approvals,
+        "dashboard_open_tasks": open_tasks,
+        "health_summary": health_summary,
+        "branch_manager_stats": branch_manager_stats,
+        "manager_tasks": manager_tasks,
+        "task_summary": task_summary,
+        "quick_notes": quick_notes,
+        "dashboard_today": today_iso,
+        "available_branches": available_branches,
+        "selected_branch_id": selected_branch_id,
+        "analytics_changes": analytics_changes,
+        "previous_revenue": previous_revenue,
+        "previous_expense": previous_expense,
+        "previous_payments": previous_payments,
+        "previous_net": previous_net,
+        "chart_labels": chart_labels,
+        "chart_values": chart_values,
+        "payment_breakdown": payment_breakdown,
+        "sales_period": sales_period,
+        "top_products": top_products,
+        "revenue_average": revenue_average,
+        "best_revenue_day": {"value": best_day[0], "label": best_day[1]},
+        "dashboard_cache_hit": False,
+    }
+    _dashboard_cache_put(cache_key, dashboard_context)
+    return render_template("dashboard.html", **dashboard_context)

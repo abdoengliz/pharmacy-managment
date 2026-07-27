@@ -90,6 +90,7 @@ def dashboard_add_task() -> Any:
         deduplicate=False,
     )
     get_db().commit()
+    session["dashboard_cache_nonce"] = int(session.get("dashboard_cache_nonce", 0) or 0) + 1
     audit("إضافة مهمة يدوية", title)
     flash("تمت إضافة المهمة.", "success")
     return redirect(url_for("dashboard"))
@@ -109,6 +110,7 @@ def dashboard_toggle_task(task_id: int) -> Any:
         db.execute("UPDATE tasks SET status='OPEN',completed_by=NULL,completed_at=NULL WHERE id=?", (task_id,))
         flash("تمت إعادة فتح المهمة.", "success")
     db.commit()
+    session["dashboard_cache_nonce"] = int(session.get("dashboard_cache_nonce", 0) or 0) + 1
     return redirect(url_for("dashboard"))
 
 @app.post("/dashboard/tasks/<int:task_id>/delete")
@@ -120,6 +122,7 @@ def dashboard_delete_task(task_id: int) -> Any:
         flash("لا يمكن حذف هذه المهمة.", "danger")
         return redirect(url_for("dashboard"))
     db.execute("DELETE FROM tasks WHERE id=?", (task_id,)); db.commit()
+    session["dashboard_cache_nonce"] = int(session.get("dashboard_cache_nonce", 0) or 0) + 1
     audit("حذف مهمة يدوية", task["title"])
     flash("تم حذف المهمة.", "success")
     return redirect(url_for("dashboard"))

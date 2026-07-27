@@ -82,7 +82,7 @@ def dashboard_add_note() -> Any:
     user = current_user(); db = get_db()
     db.execute("INSERT INTO quick_notes(note_text,user_id,location_id,created_at) VALUES(?,?,?,?)",
                (text, user["id"], user["branch_id"], now()))
-    db.commit(); flash("تم حفظ الملاحظة السريعة.", "success")
+    db.commit(); session["dashboard_cache_nonce"] = int(session.get("dashboard_cache_nonce", 0) or 0) + 1; flash("تم حفظ الملاحظة السريعة.", "success")
     return redirect(url_for("dashboard"))
 
 @app.post("/dashboard/notes/<int:note_id>/update")
@@ -94,7 +94,7 @@ def dashboard_update_note(note_id: int) -> Any:
         return redirect(url_for("dashboard"))
     cur = db.execute("UPDATE quick_notes SET note_text=?,updated_at=? WHERE id=? AND user_id=?",
                      (text, now(), note_id, user["id"]))
-    db.commit(); flash("تم تعديل الملاحظة." if cur.rowcount else "الملاحظة غير موجودة.", "success" if cur.rowcount else "danger")
+    db.commit(); session["dashboard_cache_nonce"] = int(session.get("dashboard_cache_nonce", 0) or 0) + 1; flash("تم تعديل الملاحظة." if cur.rowcount else "الملاحظة غير موجودة.", "success" if cur.rowcount else "danger")
     return redirect(url_for("dashboard"))
 
 @app.post("/dashboard/notes/<int:note_id>/delete")
@@ -102,7 +102,7 @@ def dashboard_update_note(note_id: int) -> Any:
 def dashboard_delete_note(note_id: int) -> Any:
     user = current_user(); db = get_db()
     db.execute("DELETE FROM quick_notes WHERE id=? AND user_id=?", (note_id, user["id"]))
-    db.commit(); flash("تم حذف الملاحظة.", "success")
+    db.commit(); session["dashboard_cache_nonce"] = int(session.get("dashboard_cache_nonce", 0) or 0) + 1; flash("تم حذف الملاحظة.", "success")
     return redirect(url_for("dashboard"))
 
 @app.route("/search")
