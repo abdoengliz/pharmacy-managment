@@ -1405,36 +1405,41 @@ def current_user() -> sqlite3.Row | None:
     return user
 
 
-def has_permission(permission: str) -> bool:
-    """Check permissions with a request-local cache to avoid duplicate SQL."""
-    cache = getattr(g, "_permission_cache", None)
-    if cache is None:
-        cache = {}
-        g._permission_cache = cache
-    if permission in cache:
-        return cache[permission]
+def effective_permissions() -> set[str]:
+    """Load all effective permissions once per request.
+
+    The base template checks many menu permissions. Querying each permission
+    separately produced dozens of PostgreSQL round trips for ordinary users.
+    One UNION query replaces all of those checks and is reused by task_scope().
+    """
+    cached = getattr(g, "_effective_permissions", None)
+    if cached is not None:
+        return cached
 
     user = current_user()
-    allowed = False
-    if user and user["is_active"]:
-        if user["role"] == "admin":
-            allowed = True
-        else:
-            row = get_db().execute(
-                "SELECT 1 FROM user_permissions WHERE user_id = ? AND permission = ?",
-                (user["id"], permission),
-            ).fetchone()
-            if row is not None:
-                allowed = True
-            elif "role_id" in user.keys() and user["role_id"]:
-                row = get_db().execute(
-                    "SELECT 1 FROM role_permissions WHERE role_id=? AND permission=?",
-                    (user["role_id"], permission),
-                ).fetchone()
-                allowed = row is not None
+    permissions: set[str] = set()
+    if user and user["is_active"] and user["role"] != "admin":
+        role_id = user["role_id"] if "role_id" in user.keys() else None
+        rows = get_db().execute(
+            """SELECT permission FROM user_permissions WHERE user_id=?
+               UNION
+               SELECT permission FROM role_permissions WHERE role_id=?""",
+            (user["id"], role_id),
+        ).fetchall()
+        permissions = {row["permission"] for row in rows}
 
-    cache[permission] = allowed
-    return allowed
+    g._effective_permissions = permissions
+    return permissions
+
+
+def has_permission(permission: str) -> bool:
+    """Check permissions without issuing one SQL query per menu item."""
+    user = current_user()
+    if not user or not user["is_active"]:
+        return False
+    if user["role"] == "admin":
+        return True
+    return permission in effective_permissions()
 
 
 def login_required(view: Callable[..., Any]) -> Callable[..., Any]:
@@ -1538,10 +1543,7 @@ def task_scope() -> tuple[str, list[Any]]:
     clauses=["assigned_user_id=?"]; params=[user["id"]]
     if user["branch_id"]:
         clauses.append("location_id=?"); params.append(user["branch_id"])
-    permission_rows = get_db().execute("SELECT permission FROM user_permissions WHERE user_id=?", (user["id"],)).fetchall()
-    permissions = [row["permission"] for row in permission_rows]
-    if user["role_id"]:
-        permissions.extend(row["permission"] for row in get_db().execute("SELECT permission FROM role_permissions WHERE role_id=?", (user["role_id"],)).fetchall())
+    permissions = sorted(effective_permissions())
     if permissions:
         clauses.append("assigned_permission IN (" + ",".join("?" for _ in permissions) + ")")
         params.extend(permissions)
@@ -1562,8 +1564,14 @@ def inject_globals() -> dict[str, Any]:
         notification_items = db.execute("SELECT * FROM notifications WHERE 1=1"+nscope+" ORDER BY is_read ASC,id DESC LIMIT 8", nparams).fetchall()
         unread_count = db.execute("SELECT COUNT(*) c FROM notifications WHERE is_read=0"+nscope, nparams).fetchone()["c"]
         tscope, tparams = task_scope()
-        open_task_count = db.execute("SELECT COUNT(*) c FROM tasks WHERE status='OPEN'"+tscope, tparams).fetchone()["c"]
-        overdue_task_count = db.execute("SELECT COUNT(*) c FROM tasks WHERE status='OPEN' AND due_at IS NOT NULL AND due_at < ?"+tscope, [now()]+tparams).fetchone()["c"]
+        task_counts = db.execute(
+            """SELECT COUNT(*) c,
+                      COALESCE(SUM(CASE WHEN due_at IS NOT NULL AND due_at < ? THEN 1 ELSE 0 END),0) overdue
+               FROM tasks WHERE status='OPEN'""" + tscope,
+            [now()] + tparams,
+        ).fetchone()
+        open_task_count = task_counts["c"]
+        overdue_task_count = task_counts["overdue"]
         if has_permission("view_approvals"):
             pending_approval_count = db.execute("SELECT COUNT(*) c FROM approval_requests WHERE status='PENDING'").fetchone()["c"]
     return {
