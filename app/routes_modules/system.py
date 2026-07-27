@@ -134,6 +134,30 @@ def audit_page() -> Any:
     rows=db.execute(sql+" ORDER BY a.id DESC LIMIT 500",params).fetchall()
     return render_template("audit.html", rows=rows, entity_type=entity_type, action_code=action_code)
 
+@app.post("/audit/clear")
+@login_required
+def clear_audit_log() -> Any:
+    user = current_user()
+    if not user or user["role"] != "admin":
+        flash("حذف سجل العمليات متاح لمدير النظام فقط.", "danger")
+        return redirect(url_for("audit_page"))
+
+    db = get_db()
+    try:
+        result = db.execute("DELETE FROM audit_log")
+        deleted_count = max(int(result.rowcount or 0), 0)
+        db.commit()
+        session["dashboard_cache_nonce"] = int(session.get("dashboard_cache_nonce", 0) or 0) + 1
+        if deleted_count:
+            flash(f"تم حذف {deleted_count} سجل من سجل العمليات بنجاح.", "success")
+        else:
+            flash("سجل العمليات فارغ بالفعل.", "success")
+    except Exception as exc:
+        db.rollback()
+        app.logger.exception("Failed to clear audit log")
+        flash("تعذر حذف سجل العمليات. حاول مرة أخرى.", "danger")
+    return redirect(url_for("audit_page"))
+
 @app.route("/settings", methods=["GET", "POST"])
 @login_required
 @permission_required("manage_settings")
