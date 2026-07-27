@@ -19,3 +19,13 @@ tmp/
 Thumbs.db
 .vscode/
 .idea/
+
+# Test and coverage artifacts
+.coverage
+coverage.xml
+htmlcov/
+
+# Build / packaging artifacts
+build/
+dist/
+*.egg-info/
