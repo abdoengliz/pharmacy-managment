@@ -36,6 +36,15 @@
   <div class="version-chip">الإصدار {{ app_settings.get('system_version', '5.8.0') }}</div>
 </div>
 
+<section class="mobile-command-center" aria-label="اختصارات الهاتف">
+  {% if has_permission('view_sales') %}<a href="{{ url_for('sales_invoices_page') }}"><span>🛒</span><strong>المبيعات</strong><small>الفواتير والعملاء</small></a>{% endif %}
+  {% if has_permission('view_inventory') %}<a href="{{ url_for('inventory') }}"><span>📦</span><strong>المخزون</strong><small>{{ branch_manager_stats.low_stock }} منخفض</small></a>{% endif %}
+  {% if has_permission('add_revenue') %}<a href="{{ url_for('revenues') }}"><span>💵</span><strong>إيراد</strong><small>تسجيل سريع</small></a>{% endif %}
+  {% if has_permission('add_expense') %}<a href="{{ url_for('expenses') }}"><span>💸</span><strong>مصروف</strong><small>تسجيل سريع</small></a>{% endif %}
+  <a href="{{ url_for('tasks_page') }}"><span>☑</span><strong>المهام</strong><small>{{ dashboard_open_tasks }} مفتوحة</small></a>
+  <a href="{{ url_for('global_search') }}?q="><span>⌕</span><strong>بحث</strong><small>داخل النظام</small></a>
+</section>
+
 <form class="analytics-filter panel" method="get" action="{{ url_for('dashboard') }}">
   <div class="analytics-quick-periods">
     {% for key,label in [('today','اليوم'),('week','7 أيام'),('month','هذا الشهر'),('year','هذه السنة')] %}

@@ -275,55 +275,73 @@ textarea{resize:vertical}
   table.mobile-card-table td{grid-template-columns:82px 1fr}
 }
 
+/* v6.3.9 — Mobile/iPad Stage 4: core operational pages */
+.mobile-command-center{display:none}
+.mobile-nav-icon-with-count{position:relative}
+.mobile-nav-icon-with-count b{position:absolute;top:-8px;right:-12px;display:grid;place-items:center;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:#ef4444;color:#fff;font-size:.61rem;line-height:1;border:2px solid var(--panel)}
 
-/* v6.3.8 — Mobile & iPad Stage 3: tablet workspace and touch polish */
-.sidebar nav a.active{background:#ffffff1c;color:#fff;box-shadow:inset -3px 0 0 #fff}
-.mobile-nav-count{position:absolute;top:-3px;inset-inline-start:50%;margin-inline-start:5px;min-width:17px;height:17px;padding:0 4px;border-radius:20px;background:#dc2626;color:#fff;font-size:.62rem;line-height:17px;text-align:center}
-.mobile-bottom-nav a>span,.mobile-bottom-nav button>span{position:relative}
-
-/* Tablet / iPad layout: spacious two-column workspace with drawer navigation. */
-@media(min-width:641px) and (max-width:1100px){
-  body.app-focus-mode .sidebar{width:min(42vw,340px);transform:translateX(105%);right:0;z-index:120;padding:20px 16px max(20px,env(safe-area-inset-bottom));box-shadow:-20px 0 55px rgba(0,0,0,.22)}
-  body.app-focus-mode.app-menu-open .sidebar{transform:translateX(0)}
-  .sidebar-close{display:grid;place-items:center}
-  .app-menu-backdrop{z-index:110}
-  .app-shell{grid-template-columns:1fr}
-  .topbar{min-height:68px;padding-inline:max(18px,env(safe-area-inset-left));gap:12px}
-  .mobile-search-toggle{display:none}
-  .global-search{display:flex;max-width:440px;min-width:180px}
-  body.app-focus-mode .container{width:auto;margin:20px 18px;padding-bottom:max(20px,env(safe-area-inset-bottom))}
-  .cards,.stats,.erp-stat-grid,.finance-kpi-grid,.manager-stat-grid,.analytics-kpi-grid,.employee-summary-grid,.health-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .dashboard-grid,.main-dashboard-grid,.dashboard-pro-grid,.manager-work-grid{grid-template-columns:minmax(0,1.45fr) minmax(260px,.75fr)!important}
-  .analytics-main-grid{grid-template-columns:minmax(0,1.5fr) minmax(260px,.8fr)!important}
+@media (min-width:641px) and (max-width:1180px){
+  body.app-focus-mode .container{margin:18px 16px}
+  .analytics-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .analytics-main-grid{grid-template-columns:minmax(0,1.5fr) minmax(260px,.75fr)!important}
   .analytics-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .analytics-detail-grid>*:last-child{grid-column:1/-1}
-  .grid-form,.form-grid,.grid-2,.report-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-  .table-wrap{max-width:100%;overflow:auto;-webkit-overflow-scrolling:touch}
-  table{font-size:.92rem}
-  th,td{padding:11px 10px}
-  .actions{gap:7px}
-  .panel,.card{border-radius:16px}
-}
-
-/* Landscape tablets can retain more dashboard density. */
-@media(min-width:900px) and (max-width:1100px) and (orientation:landscape){
-  body.app-focus-mode .container{margin-inline:24px}
-  .cards,.stats,.analytics-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-  .quick-action-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .analytics-detail-grid>*:last-child:nth-child(odd){grid-column:1/-1}
+  .manager-stat-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .manager-work-grid{grid-template-columns:1fr!important}
+  .grid-form,.form-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .mobile-card-table{font-size:.92rem}
 }
 
 @media(max-width:640px){
-  .mobile-bottom-nav{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);overflow:visible}
-  .mobile-bottom-nav a,.mobile-bottom-nav button{position:relative}
-  body.app-menu-open{overflow:hidden;touch-action:none}
-  .topbar{padding-top:max(8px,env(safe-area-inset-top))}
-  input,select,textarea{font-size:16px} /* prevents unwanted iOS zoom */
-  .page-head .actions,.page-heading .actions{margin-top:2px}
-  .pagination,.pager{display:flex;overflow-x:auto;gap:7px;padding-bottom:4px;scrollbar-width:none}
-  .pagination::-webkit-scrollbar,.pager::-webkit-scrollbar{display:none}
-  .modal,.dialog,.modal-content,[role=dialog]{max-width:calc(100vw - 16px);max-height:calc(100dvh - 24px);overflow:auto}
+  .mobile-bottom-nav{grid-template-columns:repeat(5,1fr)}
+  .mobile-bottom-nav a,.mobile-bottom-nav button{padding-inline:2px}
+  .mobile-command-center{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:0 0 14px}
+  .mobile-command-center a{display:grid;place-items:center;align-content:center;gap:3px;min-height:92px;padding:10px 5px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--primary) 4%,var(--panel)));color:var(--text);text-decoration:none;box-shadow:0 5px 16px rgba(15,23,42,.06)}
+  .mobile-command-center a:active{transform:scale(.97)}
+  .mobile-command-center span{font-size:1.45rem;line-height:1}
+  .mobile-command-center strong{font-size:.82rem}
+  .mobile-command-center small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:.65rem}
+
+  /* Dashboard becomes a quick glance screen first, analytics second. */
+  .page-dashboard .dashboard-heading p:not(.eyebrow){display:none}
+  .page-dashboard .dashboard-heading{margin-bottom:10px}
+  .page-dashboard .analytics-filter{padding:10px;margin-bottom:12px}
+  .page-dashboard .analytics-filter label{display:none}
+  .page-dashboard .analytics-filter .btn,.page-dashboard .analytics-period-label{display:none}
+  .page-dashboard .analytics-quick-periods{grid-template-columns:repeat(4,1fr)!important;gap:5px}
+  .page-dashboard .analytics-period-btn{min-height:38px;padding:6px 3px;font-size:.72rem}
+  .page-dashboard .analytics-kpi-grid{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;gap:9px;padding:2px 1px 8px;margin-inline:-1px}
+  .page-dashboard .analytics-kpi{flex:0 0 78%;min-height:124px;scroll-snap-align:start}
+  .page-dashboard .analytics-main-grid,.page-dashboard .analytics-detail-grid,.page-dashboard .manager-work-grid,.page-dashboard .dashboard-pro-grid{gap:12px}
+  .page-dashboard .revenue-chart-panel{order:2}
+  .page-dashboard .analytics-summary-card{order:1}
+  .page-dashboard .revenue-chart-wrap canvas{min-width:500px}
+
+  /* Invoice creation: touch-first rows and sticky save action. */
+  .page-sales-invoices-page .grid-form,.page-sales-invoices-page .form-grid{display:grid!important;grid-template-columns:1fr!important}
+  .page-sales-invoices-page .invoice-item-row,.page-sales-invoices-page [data-item-row]{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);margin-bottom:10px}
+  .page-sales-invoices-page .invoice-item-row>*:first-child,.page-sales-invoices-page [data-item-row]>*:first-child{grid-column:1/-1}
+  .page-sales-invoices-page .invoice-items input,.page-sales-invoices-page #invoiceItems input{min-width:0;width:100%}
+  .page-sales-invoices-page form>button[type=submit]{position:sticky;bottom:78px;z-index:20;box-shadow:0 8px 22px rgba(15,23,42,.18)}
+
+  /* Inventory: forms and stock actions as app cards. */
+  .page-inventory .inventory-grid,.page-inventory .grid-2{grid-template-columns:1fr!important}
+  .page-inventory .panel form.grid-form{grid-template-columns:1fr!important}
+  .page-inventory .panel h2{font-size:1.05rem}
+  .page-inventory table.mobile-card-table td:last-child .actions{grid-template-columns:1fr 1fr}
+
+  /* Common operational entry pages */
+  .page-revenues .split-row,.page-expenses .split-row,.page-revenues .employee-split-row{display:grid!important;grid-template-columns:1fr!important;gap:8px;padding:10px;border:1px solid var(--line);border-radius:12px;margin-bottom:9px}
+  .page-revenues .split-box,.page-expenses .split-box{padding:11px;border-radius:13px;background:color-mix(in srgb,var(--primary) 4%,var(--bg))}
+  .page-revenues .split-summary,.page-expenses .split-summary{position:sticky;bottom:76px;z-index:12;padding:9px;border-radius:10px;background:var(--panel);box-shadow:0 5px 14px rgba(15,23,42,.12)}
+
+  /* Better modal/dialog behavior on phones, including legacy custom dialogs. */
+  dialog,.modal-content,.dialog-content{max-width:calc(100vw - 16px)!important;max-height:calc(100dvh - 28px)!important;margin:auto!important;border-radius:16px!important;overflow:auto!important}
+  dialog form,.modal-content form,.dialog-content form{grid-template-columns:1fr!important}
 }
 
-@supports(height:100dvh){
-  body.app-focus-mode .sidebar{height:100dvh}
+@media(max-width:390px){
+  .mobile-command-center{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mobile-bottom-nav small{font-size:.58rem}
+  .page-dashboard .analytics-kpi{flex-basis:88%}
 }

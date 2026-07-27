@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="ar" dir="rtl" data-theme="light">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#176b55"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{% block title %}{{ app_settings.get("company_name", "صيدلي ERP") }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="{% if current_user %}app-focus-mode{% endif %} page-{{ request.endpoint|default('unknown')|replace('.', '-') }}">
+<body class="{% if current_user %}app-focus-mode{% endif %} page-{{ request.endpoint|default('unknown')|replace('_','-') }}">
 {% if current_user %}
 <div class="app-shell">
   <div class="app-menu-backdrop" id="appMenuBackdrop" aria-hidden="true"></div>
@@ -41,9 +41,9 @@
   </section>
   <nav class="mobile-bottom-nav" aria-label="التنقل السريع للهاتف">
     {% if has_permission('view_dashboard') %}<a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}"><span>⌂</span><small>الرئيسية</small></a>{% endif %}
-    {% if has_permission('view_revenue') %}<a href="{{ url_for('revenues') }}" class="{{ 'active' if request.endpoint == 'revenues' else '' }}"><span>＋</span><small>الإيرادات</small></a>{% endif %}
-    {% if has_permission('view_expenses') %}<a href="{{ url_for('expenses') }}" class="{{ 'active' if request.endpoint == 'expenses' else '' }}"><span>−</span><small>المصروفات</small></a>{% endif %}
-    <a href="{{ url_for('tasks_page') }}" class="{{ 'active' if request.endpoint == 'tasks_page' else '' }}"><span>☑{% if open_task_count %}<b class="mobile-nav-count">{{ open_task_count }}</b>{% endif %}</span><small>المهام</small></a>
+    {% if has_permission('view_sales') %}<a href="{{ url_for('sales_invoices_page') }}" class="{{ 'active' if request.endpoint in ['sales_invoices_page','sales_invoice_detail'] else '' }}"><span>🛒</span><small>المبيعات</small></a>{% elif has_permission('view_revenue') %}<a href="{{ url_for('revenues') }}" class="{{ 'active' if request.endpoint == 'revenues' else '' }}"><span>＋</span><small>الإيرادات</small></a>{% endif %}
+    {% if has_permission('view_inventory') %}<a href="{{ url_for('inventory') }}" class="{{ 'active' if request.endpoint in ['inventory','stock_transfers','stock_transfer_detail'] else '' }}"><span>📦</span><small>المخزون</small></a>{% else %}<a href="{{ url_for('tasks_page') }}" class="{{ 'active' if request.endpoint == 'tasks_page' else '' }}"><span class="mobile-nav-icon-with-count">☑{% if open_task_count %}<b>{{ open_task_count }}</b>{% endif %}</span><small>المهام</small></a>{% endif %}
+    <a href="{{ url_for('tasks_page') }}" class="mobile-nav-tasks {{ 'active' if request.endpoint == 'tasks_page' else '' }}"><span class="mobile-nav-icon-with-count">☑{% if open_task_count %}<b>{{ open_task_count }}</b>{% endif %}</span><small>المهام</small></a>
     <button type="button" id="mobileMoreMenu" aria-label="فتح القائمة الكاملة"><span>☰</span><small>المزيد</small></button>
   </nav>
 </div>
@@ -113,19 +113,6 @@ document.querySelectorAll('main.container table').forEach(table=>{
     });
   }
 });
-
-function updateViewportMode(){
-  const width=window.innerWidth;
-  document.body.classList.toggle('is-phone',width<=640);
-  document.body.classList.toggle('is-tablet',width>640&&width<=1100);
-  document.body.classList.toggle('is-desktop',width>1100);
-}
-updateViewportMode();
-window.addEventListener('resize',updateViewportMode,{passive:true});
-window.addEventListener('orientationchange',()=>setTimeout(updateViewportMode,120),{passive:true});
-const activeSidebarLink=appSidebar&&appSidebar.querySelector('a[href="'+location.pathname+'"]');
-if(activeSidebarLink){activeSidebarLink.classList.add('active');activeSidebarLink.setAttribute('aria-current','page');}
-
 const mobileMoreMenu=document.getElementById('mobileMoreMenu');
 if(mobileMoreMenu) mobileMoreMenu.addEventListener('click',()=>setAppMenu(true));
 </script>
