@@ -63,37 +63,123 @@ def suppliers() -> Any:
     status = request.args.get("status", "").strip()
     sort = request.args.get("sort", "name")
     archived = int(request.args.get("archived") or 0)
+    page = max(1, int(request.args.get("page") or 1))
+    per_page = 50
+    offset = (page - 1) * per_page
+
     where = ["COALESCE(s.is_archived,0)=?"]
     params: list[Any] = [archived]
     if category:
-        where.append("s.category=?"); params.append(category)
+        where.append("s.category=?")
+        params.append(category)
     if location_id:
-        where.append("EXISTS(SELECT 1 FROM supplier_location_accounts al WHERE al.supplier_id=s.id AND al.location_id=?)"); params.append(location_id)
-    balance_expr = "(COALESCE((SELECT SUM(a.opening_due) FROM supplier_location_accounts a WHERE a.supplier_id=s.id),0)+COALESCE((SELECT SUM(i.amount) FROM supplier_invoices i WHERE i.supplier_id=s.id),0)-COALESCE((SELECT SUM(p.amount) FROM supplier_payments p WHERE p.supplier_id=s.id),0))"
-    overdue_expr = "(SELECT COUNT(*) FROM supplier_invoices io WHERE io.supplier_id=s.id AND NULLIF(io.due_date,'')::date < CURRENT_DATE AND io.amount>COALESCE((SELECT SUM(po.amount) FROM supplier_payments po WHERE po.invoice_id=io.id),0))"
-    if status == "due": where.append(balance_expr + ">0.005")
-    elif status == "paid": where.append(balance_expr + "<=0.005")
-    elif status == "overdue": where.append(overdue_expr + ">0")
-    order = {"balance_desc":"remaining DESC", "balance_asc":"remaining ASC", "rating_desc":"s.rating DESC,s.name",
-             "rating_asc":"s.rating ASC,s.name", "name":"s.name"}.get(sort, "s.name")
-    sql = "SELECT s.*, " + \
-          "COALESCE((SELECT SUM(a.opening_due) FROM supplier_location_accounts a WHERE a.supplier_id=s.id),0)+COALESCE((SELECT SUM(i.amount) FROM supplier_invoices i WHERE i.supplier_id=s.id),0) total_due," + \
-          "COALESCE((SELECT SUM(p.amount) FROM supplier_payments p WHERE p.supplier_id=s.id),0) paid," + balance_expr + " remaining," + \
-          "(SELECT COUNT(*) FROM supplier_location_accounts ax WHERE ax.supplier_id=s.id) location_count," + \
-          "(SELECT COUNT(*) FROM supplier_invoices ix WHERE ix.supplier_id=s.id) invoice_count," + overdue_expr + " overdue_count " + \
-          "FROM suppliers s WHERE " + " AND ".join(where) + " ORDER BY " + order
-    rows = db.execute(sql, params).fetchall()
+        where.append("EXISTS(SELECT 1 FROM supplier_location_accounts al WHERE al.supplier_id=s.id AND al.location_id=?)")
+        params.append(location_id)
+
+    balance_expr = "(COALESCE(aa.opening_due,0)+COALESCE(ii.invoice_total,0)-COALESCE(pp.paid_total,0))"
+    if status == "due":
+        where.append(balance_expr + ">0.005")
+    elif status == "paid":
+        where.append(balance_expr + "<=0.005")
+    elif status == "overdue":
+        where.append("COALESCE(oi.overdue_count,0)>0")
+
+    order = {
+        "balance_desc": "remaining DESC",
+        "balance_asc": "remaining ASC",
+        "rating_desc": "s.rating DESC,s.name",
+        "rating_asc": "s.rating ASC,s.name",
+        "name": "s.name",
+    }.get(sort, "s.name")
+
+    sql = """
+        WITH account_agg AS (
+            SELECT supplier_id, SUM(opening_due) opening_due, COUNT(*) location_count
+            FROM supplier_location_accounts GROUP BY supplier_id
+        ), invoice_agg AS (
+            SELECT supplier_id, SUM(amount) invoice_total, COUNT(*) invoice_count
+            FROM supplier_invoices GROUP BY supplier_id
+        ), payment_agg AS (
+            SELECT supplier_id, SUM(amount) paid_total
+            FROM supplier_payments GROUP BY supplier_id
+        ), invoice_paid AS (
+            SELECT invoice_id, SUM(amount) paid
+            FROM supplier_payments WHERE invoice_id IS NOT NULL GROUP BY invoice_id
+        ), overdue_agg AS (
+            SELECT i.supplier_id, COUNT(*) overdue_count
+            FROM supplier_invoices i
+            LEFT JOIN invoice_paid ip ON ip.invoice_id=i.id
+            WHERE NULLIF(i.due_date,'')::date < CURRENT_DATE
+              AND i.amount > COALESCE(ip.paid,0)
+            GROUP BY i.supplier_id
+        )
+        SELECT s.*,
+               COALESCE(aa.opening_due,0)+COALESCE(ii.invoice_total,0) total_due,
+               COALESCE(pp.paid_total,0) paid,
+               COALESCE(aa.opening_due,0)+COALESCE(ii.invoice_total,0)-COALESCE(pp.paid_total,0) remaining,
+               COALESCE(aa.location_count,0) location_count,
+               COALESCE(ii.invoice_count,0) invoice_count,
+               COALESCE(oi.overdue_count,0) overdue_count,
+               COUNT(*) OVER() filtered_count
+        FROM suppliers s
+        LEFT JOIN account_agg aa ON aa.supplier_id=s.id
+        LEFT JOIN invoice_agg ii ON ii.supplier_id=s.id
+        LEFT JOIN payment_agg pp ON pp.supplier_id=s.id
+        LEFT JOIN overdue_agg oi ON oi.supplier_id=s.id
+        WHERE """ + " AND ".join(where) + " ORDER BY " + order + " LIMIT ? OFFSET ?"
+    rows = db.execute(sql, [*params, per_page, offset]).fetchall()
+    filtered_count = int(rows[0]["filtered_count"] if rows else 0)
+    total_pages = max(1, (filtered_count + per_page - 1) // per_page)
+
     locations = db.execute("SELECT * FROM branches WHERE is_active=1 ORDER BY name").fetchall()
-    accounts = db.execute("""SELECT a.*,s.name supplier_name,b.name location_name,
-        a.opening_due+COALESCE((SELECT SUM(i.amount) FROM supplier_invoices i WHERE i.supplier_account_id=a.id),0) total_due,
-        COALESCE((SELECT SUM(p.amount) FROM supplier_payments p WHERE p.supplier_account_id=a.id),0) paid
-        FROM supplier_location_accounts a JOIN suppliers s ON s.id=a.supplier_id JOIN branches b ON b.id=a.location_id
-        WHERE COALESCE(s.is_archived,0)=0 ORDER BY s.name,b.name""").fetchall()
-    kpi_sql = "SELECT COUNT(*) suppliers,COALESCE(SUM(total_due),0) total_due,COALESCE(SUM(paid),0) paid,COALESCE(SUM(remaining),0) remaining,COALESCE(SUM(overdue_count),0) overdue FROM (SELECT s.id," + \
-        "COALESCE((SELECT SUM(a.opening_due) FROM supplier_location_accounts a WHERE a.supplier_id=s.id),0)+COALESCE((SELECT SUM(i.amount) FROM supplier_invoices i WHERE i.supplier_id=s.id),0) total_due," + \
-        "COALESCE((SELECT SUM(p.amount) FROM supplier_payments p WHERE p.supplier_id=s.id),0) paid," + balance_expr + " remaining," + overdue_expr + " overdue_count FROM suppliers s WHERE COALESCE(s.is_archived,0)=0)"
-    kpis = db.execute(kpi_sql).fetchone()
-    return render_template("suppliers.html", rows=rows, locations=locations, supplier_accounts=accounts, kpis=kpis, filters=request.args)
+    accounts = db.execute("""
+        WITH invoice_agg AS (
+            SELECT supplier_account_id, SUM(amount) total
+            FROM supplier_invoices GROUP BY supplier_account_id
+        ), payment_agg AS (
+            SELECT supplier_account_id, SUM(amount) total
+            FROM supplier_payments GROUP BY supplier_account_id
+        )
+        SELECT a.*,s.name supplier_name,b.name location_name,
+               a.opening_due+COALESCE(i.total,0) total_due,
+               COALESCE(p.total,0) paid
+        FROM supplier_location_accounts a
+        JOIN suppliers s ON s.id=a.supplier_id
+        JOIN branches b ON b.id=a.location_id
+        LEFT JOIN invoice_agg i ON i.supplier_account_id=a.id
+        LEFT JOIN payment_agg p ON p.supplier_account_id=a.id
+        WHERE COALESCE(s.is_archived,0)=0
+        ORDER BY s.name,b.name
+        LIMIT 300
+    """).fetchall()
+    kpis = db.execute("""
+        WITH account_agg AS (
+            SELECT supplier_id, SUM(opening_due) opening_due FROM supplier_location_accounts GROUP BY supplier_id
+        ), invoice_paid AS (
+            SELECT invoice_id, SUM(amount) paid FROM supplier_payments WHERE invoice_id IS NOT NULL GROUP BY invoice_id
+        ), invoice_agg AS (
+            SELECT i.supplier_id, SUM(i.amount) invoice_total,
+                   SUM(CASE WHEN NULLIF(i.due_date,'')::date < CURRENT_DATE AND i.amount>COALESCE(ip.paid,0) THEN 1 ELSE 0 END) overdue
+            FROM supplier_invoices i LEFT JOIN invoice_paid ip ON ip.invoice_id=i.id GROUP BY i.supplier_id
+        ), payment_agg AS (
+            SELECT supplier_id, SUM(amount) paid_total FROM supplier_payments GROUP BY supplier_id
+        )
+        SELECT COUNT(*) suppliers,
+               COALESCE(SUM(COALESCE(a.opening_due,0)+COALESCE(i.invoice_total,0)),0) total_due,
+               COALESCE(SUM(COALESCE(p.paid_total,0)),0) paid,
+               COALESCE(SUM(COALESCE(a.opening_due,0)+COALESCE(i.invoice_total,0)-COALESCE(p.paid_total,0)),0) remaining,
+               COALESCE(SUM(COALESCE(i.overdue,0)),0) overdue
+        FROM suppliers s
+        LEFT JOIN account_agg a ON a.supplier_id=s.id
+        LEFT JOIN invoice_agg i ON i.supplier_id=s.id
+        LEFT JOIN payment_agg p ON p.supplier_id=s.id
+        WHERE COALESCE(s.is_archived,0)=0
+    """).fetchone()
+    return render_template(
+        "suppliers.html", rows=rows, locations=locations, supplier_accounts=accounts,
+        kpis=kpis, filters=request.args, page=page, total_pages=total_pages,
+        filtered_count=filtered_count, per_page=per_page,
+    )
 
 @app.post("/suppliers/<int:supplier_id>/accounts")
 @login_required
@@ -114,33 +200,54 @@ def add_supplier_account(supplier_id:int)->Any:
 @permission_required("view_suppliers")
 def supplier_detail(supplier_id:int)->Any:
     db=get_db()
-    supplier=db.execute("SELECT * FROM suppliers WHERE id=?",(supplier_id,)).fetchone()
+    supplier=db.execute("""
+        SELECT s.*,
+               COALESCE(a.opening_due,0)+COALESCE(i.invoice_total,0) computed_total_due,
+               COALESCE(p.paid_total,0) computed_paid,
+               i.last_invoice
+        FROM suppliers s
+        LEFT JOIN (SELECT supplier_id,SUM(opening_due) opening_due FROM supplier_location_accounts GROUP BY supplier_id) a ON a.supplier_id=s.id
+        LEFT JOIN (SELECT supplier_id,SUM(amount) invoice_total,MAX(invoice_date) last_invoice FROM supplier_invoices GROUP BY supplier_id) i ON i.supplier_id=s.id
+        LEFT JOIN (SELECT supplier_id,SUM(amount) paid_total FROM supplier_payments GROUP BY supplier_id) p ON p.supplier_id=s.id
+        WHERE s.id=?
+    """,(supplier_id,)).fetchone()
     if not supplier:
         flash("المورد غير موجود.","danger"); return redirect(url_for("suppliers"))
     locations=db.execute("SELECT * FROM branches WHERE is_active=1 ORDER BY id").fetchall()
-    accounts=db.execute("""SELECT a.*,b.name location_name,
-        a.opening_due + COALESCE((SELECT SUM(i.amount) FROM supplier_invoices i WHERE i.supplier_account_id=a.id),0) total_due,
-        COALESCE((SELECT SUM(p.amount) FROM supplier_payments p WHERE p.supplier_account_id=a.id),0) paid,
-        (SELECT COUNT(*) FROM supplier_invoices i WHERE i.supplier_account_id=a.id) invoice_count
+    accounts=db.execute("""
+        WITH invoice_agg AS (
+            SELECT supplier_account_id,SUM(amount) total,COUNT(*) invoice_count
+            FROM supplier_invoices WHERE supplier_id=? GROUP BY supplier_account_id
+        ), payment_agg AS (
+            SELECT supplier_account_id,SUM(amount) paid
+            FROM supplier_payments WHERE supplier_id=? GROUP BY supplier_account_id
+        )
+        SELECT a.*,b.name location_name,
+               a.opening_due+COALESCE(i.total,0) total_due,
+               COALESCE(p.paid,0) paid,
+               COALESCE(i.invoice_count,0) invoice_count
         FROM supplier_location_accounts a JOIN branches b ON b.id=a.location_id
-        WHERE a.supplier_id=? ORDER BY b.name""",(supplier_id,)).fetchall()
-    invoices=db.execute("""SELECT i.*,b.name location_name,
-        COALESCE((SELECT SUM(p.amount) FROM supplier_payments p WHERE p.invoice_id=i.id),0) paid,
-        CASE WHEN NULLIF(i.due_date,'')::date < CURRENT_DATE AND i.amount>COALESCE((SELECT SUM(p.amount) FROM supplier_payments p WHERE p.invoice_id=i.id),0) THEN 1 ELSE 0 END overdue
+        LEFT JOIN invoice_agg i ON i.supplier_account_id=a.id
+        LEFT JOIN payment_agg p ON p.supplier_account_id=a.id
+        WHERE a.supplier_id=? ORDER BY b.name
+    """,(supplier_id,supplier_id,supplier_id)).fetchall()
+    invoices=db.execute("""
+        WITH paid AS (SELECT invoice_id,SUM(amount) total FROM supplier_payments WHERE supplier_id=? AND invoice_id IS NOT NULL GROUP BY invoice_id)
+        SELECT i.*,b.name location_name,COALESCE(p.total,0) paid,
+               CASE WHEN NULLIF(i.due_date,'')::date < CURRENT_DATE AND i.amount>COALESCE(p.total,0) THEN 1 ELSE 0 END overdue
         FROM supplier_invoices i JOIN branches b ON b.id=i.branch_id
-        WHERE i.supplier_id=? ORDER BY i.invoice_date DESC,i.id DESC""",(supplier_id,)).fetchall()
+        LEFT JOIN paid p ON p.invoice_id=i.id
+        WHERE i.supplier_id=? ORDER BY i.invoice_date DESC,i.id DESC LIMIT 300
+    """,(supplier_id,supplier_id)).fetchall()
     payments=db.execute("""SELECT p.*,b.name location_name,i.invoice_number,u.full_name creator
         FROM supplier_payments p JOIN branches b ON b.id=p.branch_id
         LEFT JOIN supplier_invoices i ON i.id=p.invoice_id JOIN users u ON u.id=p.created_by
-        WHERE p.supplier_id=? ORDER BY p.payment_date DESC,p.id DESC""",(supplier_id,)).fetchall()
-    totals=db.execute("""SELECT
-        COALESCE((SELECT SUM(opening_due) FROM supplier_location_accounts WHERE supplier_id=?),0)
-          + COALESCE((SELECT SUM(amount) FROM supplier_invoices WHERE supplier_id=?),0) total_due,
-        COALESCE((SELECT SUM(amount) FROM supplier_payments WHERE supplier_id=?),0) paid""",(supplier_id,supplier_id,supplier_id)).fetchone()
+        WHERE p.supplier_id=? ORDER BY p.payment_date DESC,p.id DESC LIMIT 300""",(supplier_id,)).fetchall()
+    totals={"total_due":supplier["computed_total_due"],"paid":supplier["computed_paid"]}
     overdue_invoices=[i for i in invoices if i["overdue"]]
     financial_accounts=db.execute("SELECT * FROM financial_accounts WHERE is_active=1 ORDER BY branch_id,name").fetchall()
-    last_invoice=db.execute("SELECT MAX(invoice_date) d FROM supplier_invoices WHERE supplier_id=?",(supplier_id,)).fetchone()["d"]
-    communications=db.execute("""SELECT c.*,u.full_name creator FROM supplier_communications c JOIN users u ON u.id=c.created_by WHERE c.supplier_id=? ORDER BY c.communication_date DESC,c.id DESC""",(supplier_id,)).fetchall()
+    last_invoice=supplier["last_invoice"]
+    communications=db.execute("""SELECT c.*,u.full_name creator FROM supplier_communications c JOIN users u ON u.id=c.created_by WHERE c.supplier_id=? ORDER BY c.communication_date DESC,c.id DESC LIMIT 200""",(supplier_id,)).fetchall()
     timeline=[]
     for i in invoices:
         timeline.append({"date":i["invoice_date"],"type":"فاتورة","text":f"فاتورة {i['invoice_number']} بقيمة {float(i['amount']):.2f} في {i['location_name']}"})
@@ -148,7 +255,7 @@ def supplier_detail(supplier_id:int)->Any:
         timeline.append({"date":pmt["payment_date"],"type":"سداد","text":f"سداد {float(pmt['amount']):.2f} في {pmt['location_name']}"})
     for c in communications:
         timeline.append({"date":c["communication_date"],"type":c["communication_type"],"text":c["notes"]})
-    timeline.sort(key=lambda x:x["date"],reverse=True)
+    timeline.sort(key=lambda x:x["date"] or "",reverse=True)
     merge_candidates=db.execute("SELECT id,name,supplier_code FROM suppliers WHERE id<>? AND COALESCE(is_archived,0)=0 ORDER BY name",(supplier_id,)).fetchall()
     return render_template("supplier_detail.html",supplier=supplier,accounts=accounts,locations=locations,invoices=invoices,payments=payments,totals=totals,today=datetime.now().date().isoformat(),overdue_invoices=overdue_invoices,financial_accounts=financial_accounts,last_invoice=last_invoice,communications=communications,timeline=timeline[:100],merge_candidates=merge_candidates)
 
