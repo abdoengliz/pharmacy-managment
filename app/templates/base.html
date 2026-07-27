@@ -78,6 +78,16 @@
 {% else %}<main class="container">{% for category, message in get_flashed_messages(with_categories=true) %}<div class="alert {{ category }}">{{ message }}</div>{% endfor %}{{ self.content() }}</main>{% endif %}
 <script>
 const root=document.documentElement, saved=localStorage.getItem('theme')||'light'; root.dataset.theme=saved;
+// Clear stale overlay locks after PWA relaunch or browser back/forward restore.
+function restorePageScroll(){
+  document.body.classList.remove('mobile-quick-open','app-menu-open');
+  document.documentElement.style.removeProperty('overflow');
+  document.body.style.removeProperty('overflow');
+  document.body.style.removeProperty('position');
+}
+restorePageScroll();
+window.addEventListener('pageshow', restorePageScroll);
+window.addEventListener('focus', ()=>{ if(!document.querySelector('.mobile-quick-sheet[aria-hidden="false"]')) restorePageScroll(); });
 const btn=document.getElementById('themeToggle'); if(btn) btn.onclick=()=>{root.dataset.theme=root.dataset.theme==='dark'?'light':'dark';localStorage.setItem('theme',root.dataset.theme)};
 document.addEventListener('keydown',(event)=>{
   if(event.key==='F8' && {{ 'true' if current_user else 'false' }}){
