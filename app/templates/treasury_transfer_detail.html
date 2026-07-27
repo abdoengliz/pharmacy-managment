@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
 {% block title %}تفاصيل التوريد المالي{% endblock %}
 {% block content %}
-<div class="page-head"><div><h1>{{ transfer.transfer_number }}</h1><p>توريد أو تحويل مالي بين الخزائن</p></div><span class="status {{ transfer.status|lower }}">{{ status_labels.get(transfer.status,transfer.status) }}</span></div>
+<div class="detail-page">
+<div class="page-head detail-hero"><div><h1>{{ transfer.transfer_number }}</h1><p>توريد أو تحويل مالي بين الخزائن</p></div><span class="status {{ transfer.status|lower }}">{{ status_labels.get(transfer.status,transfer.status) }}</span></div>
 <div class="cards stats">
 <div class="card"><span>من</span><b>{{ transfer.from_location }}</b><small>{{ transfer.from_account }}</small></div>
 <div class="card"><span>إلى</span><b>{{ transfer.to_location }}</b><small>{{ transfer.to_account }}</small></div>
@@ -16,4 +17,5 @@
 {% if transfer.status in ['DRAFT','SENT'] and has_permission('create_treasury_transfers') %}<form method="post" action="{{ url_for('cancel_treasury_transfer',transfer_id=transfer.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="danger-button">إلغاء التحويل</button></form>{% endif %}
 <a class="button-link" href="{{ url_for('treasury_center') }}">الرجوع للخزائن</a>
 </div></section>
+</div>
 {% endblock %}

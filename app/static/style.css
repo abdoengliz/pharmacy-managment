@@ -345,3 +345,79 @@ textarea{resize:vertical}
   .mobile-bottom-nav small{font-size:.58rem}
   .page-dashboard .analytics-kpi{flex-basis:88%}
 }
+
+
+/* Mobile UI stage 5: operational lists and touch-first cards */
+@media(max-width:640px){
+  .mobile-row-actions,.mobile-card-table td[data-label="الإجراءات"]{display:flex!important;grid-template-columns:none!important;flex-wrap:wrap;gap:7px;align-items:center}
+  .mobile-row-actions::before,.mobile-card-table td[data-label="الإجراءات"]::before{width:100%;flex-basis:100%}
+  .supplier-mobile-list td[data-label="المورد"],.employee-mobile-list td[data-label="الموظف"],.inventory-mobile-list td[data-label="الصنف"]{font-size:1rem}
+  .supplier-mobile-list td[data-label="المتبقي"] strong,.inventory-mobile-list td[data-label="الكمية"] strong{font-size:1.15rem;color:var(--primary)}
+  .mobile-card-table tr{position:relative}
+  .mobile-card-table tr:active{transform:scale(.995)}
+  .mobile-card-table .status{justify-self:start}
+  .pagination{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));z-index:15;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(12px);padding:10px;border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 22px rgba(15,23,42,.1)}
+  .page-suppliers #supplierFilters,.employee-filter{position:sticky;top:72px;z-index:20;max-height:54px;overflow:hidden;transition:max-height .25s ease;padding:10px}
+  .page-suppliers #supplierFilters:focus-within,.employee-filter:focus-within{max-height:480px;overflow:visible}
+  .sales-history-mobile td[data-label="الإجمالي"]{font-weight:800;color:var(--primary)}
+  .mobile-pos-items{min-width:760px}
+  .pos-items-card .table-wrap{scroll-snap-type:x proximity}
+  .pos-items-card .table-wrap::before{content:"اسحب الجدول أفقياً لرؤية تفاصيل الصنف";display:block;position:sticky;right:0;width:max-content;margin:0 0 8px;padding:6px 9px;border-radius:9px;background:color-mix(in srgb,var(--primary) 9%,var(--panel));color:var(--muted);font-size:.72rem;font-weight:700}
+  .pos-remove{min-width:42px;min-height:42px;font-size:1.25rem}
+}
+@media(min-width:641px) and (max-width:1180px){
+  .supplier-mobile-list,.employee-mobile-list{min-width:980px}
+  .finance-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+
+/* v6.4.1 — Mobile/iPad Stage 6: detail pages and touch-first forms */
+.detail-page .page-head,.detail-page .page-heading{align-items:flex-start}
+.detail-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.detail-actions form{margin:0}
+.detail-actions .btn,.detail-actions .button-link,.detail-actions button{white-space:nowrap}
+.detail-hero{position:relative;overflow:hidden}
+.detail-hero::after{content:"";position:absolute;inset:auto -40px -70px auto;width:180px;height:180px;border-radius:50%;background:color-mix(in srgb,var(--primary) 8%,transparent);pointer-events:none}
+.detail-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.detail-summary-grid>*{min-width:0}
+.detail-section{scroll-margin-top:88px}
+.detail-section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.detail-form-actions{display:flex;justify-content:flex-end;gap:8px;grid-column:1/-1}
+.detail-tabs{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;padding:4px 2px 8px;position:sticky;top:64px;z-index:25;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(12px)}
+.detail-tabs::-webkit-scrollbar{display:none}
+.detail-tabs button,.detail-tabs a{flex:0 0 auto;min-height:42px;padding:8px 14px;border-radius:999px;white-space:nowrap}
+.mobile-sticky-actions{display:none}
+
+@media (min-width:641px) and (max-width:1180px){
+  .detail-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .detail-page .dashboard-pro-grid{grid-template-columns:1fr!important}
+  .detail-page .detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+@media(max-width:640px){
+  .detail-page .page-head,.detail-page .page-heading{display:grid!important;grid-template-columns:1fr!important;gap:12px}
+  .detail-page .page-head>div:last-child,.detail-page .page-heading>div:last-child,.detail-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}
+  .detail-page .page-head>div:last-child>a,.detail-page .page-heading>div:last-child>a,.detail-page .page-head>div:last-child>form,.detail-page .page-heading>div:last-child>form,.detail-actions>*{width:100%}
+  .detail-page .page-head>div:last-child form button,.detail-page .page-heading>div:last-child form button{width:100%}
+  .detail-summary-grid,.detail-page .stats,.detail-page .finance-kpi-grid{display:flex!important;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;padding:2px 2px 10px;margin-inline:-2px}
+  .detail-summary-grid>*,.detail-page .stats>*,.detail-page .finance-kpi-grid>*{flex:0 0 min(78vw,270px);scroll-snap-align:start}
+  .detail-page .dashboard-pro-grid{grid-template-columns:1fr!important}
+  .detail-page .panel.grid-form,.detail-page form.grid-form,.detail-page .hr-form{grid-template-columns:1fr!important}
+  .detail-page .detail-grid,.detail-page .finance-summary-grid{grid-template-columns:1fr!important}
+  .detail-page .detail-item{padding:12px;border-radius:12px}
+  .detail-page h2{font-size:1.08rem;line-height:1.4;margin-top:18px}
+  .detail-page .table-wrap{margin-inline:0}
+  .detail-tabs,.employee-tabs{top:62px;margin-inline:-8px;padding-inline:8px}
+  .detail-page .split-box{padding:12px}
+  .detail-page .split-row{grid-template-columns:1fr!important}
+  .detail-page textarea{min-height:110px}
+  .detail-page .danger{min-height:44px}
+  .mobile-sticky-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));z-index:35;padding:8px;margin:14px -2px 4px;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 28px rgba(15,23,42,.13);backdrop-filter:blur(14px)}
+  .mobile-sticky-actions>*{width:100%}
+  .mobile-sticky-actions form button{width:100%}
+  .detail-page dialog,.detail-page .modal-content{width:calc(100vw - 18px)!important;max-width:none!important;max-height:calc(100dvh - 24px);margin:auto;border-radius:16px}
+}
+@media(max-width:390px){
+  .detail-page .page-head>div:last-child,.detail-page .page-heading>div:last-child,.detail-actions,.mobile-sticky-actions{grid-template-columns:1fr}
+  .detail-summary-grid>*,.detail-page .stats>*,.detail-page .finance-kpi-grid>*{flex-basis:86vw}
+}

@@ -37,7 +37,7 @@
     </section>
 
     <section class="pos-card pos-items-card">
-      <div class="table-wrap"><table id="items" class="pos-items-table">
+      <div class="table-wrap"><table id="items" class="pos-items-table mobile-pos-items">
         <thead><tr><th>#</th><th>الرقم التجاري</th><th>الاسم التجاري</th><th>الكمية</th><th>السعر</th><th>الخصم %</th><th>الضريبة %</th><th>الإجمالي</th><th>حذف</th></tr></thead>
         <tbody id="invoiceItems"><tr class="empty-row"><td colspan="9">لم تتم إضافة أصناف بعد</td></tr></tbody>
       </table></div>
@@ -61,8 +61,8 @@
 
   <section class="pos-card pos-history">
     <h2>المسودات والفواتير السابقة</h2>
-    <div class="table-wrap"><table><thead><tr><th>الرقم</th><th>التاريخ</th><th>العميل</th><th>الفرع</th><th>الحالة</th><th>الإجمالي</th></tr></thead><tbody>
-      {% for i in invoices %}<tr><td><a href="{{ url_for('sales_invoice_detail',invoice_id=i.id) }}">{{ i.invoice_no }}</a></td><td>{{ i.invoice_date }}</td><td>{{ i.customer_name or 'عميل نقدي' }}</td><td>{{ i.branch_name }}</td><td>{{ i.status }}</td><td>{{ '%.2f'|format(i.total_amount) }}</td></tr>{% else %}<tr><td colspan="6">لا توجد فواتير.</td></tr>{% endfor %}
+    <div class="table-wrap"><table class="mobile-card-table sales-history-mobile"><thead><tr><th>الرقم</th><th>التاريخ</th><th>العميل</th><th>الفرع</th><th>الحالة</th><th>الإجمالي</th></tr></thead><tbody>
+      {% for i in invoices %}<tr><td data-label="الرقم"><a href="{{ url_for('sales_invoice_detail',invoice_id=i.id) }}">{{ i.invoice_no }}</a></td><td data-label="التاريخ">{{ i.invoice_date }}</td><td data-label="العميل">{{ i.customer_name or 'عميل نقدي' }}</td><td data-label="الفرع">{{ i.branch_name }}</td><td data-label="الحالة">{{ i.status }}</td><td data-label="الإجمالي">{{ '%.2f'|format(i.total_amount) }}</td></tr>{% else %}<tr><td colspan="6">لا توجد فواتير.</td></tr>{% endfor %}
     </tbody></table></div>
   </section>
 </div>
@@ -144,12 +144,12 @@
     if (q<=0 || p<0 || d<0 || d>100 || t<0 || t>100) { alert('تأكد من بيانات الصنف والكمية والسعر.'); return; }
     const empty=tbody.querySelector('.empty-row'); if(empty) empty.remove();
     const row=document.createElement('tr'); row.dataset.itemRow='1';
-    row.innerHTML=`<td class="row-number"></td><td>${escapeHtml(selectedProduct.sku||'')}</td><td>${escapeHtml(selectedProduct.name)}<input type="hidden" name="item_code[]" value="${escapeHtml(selectedProduct.sku||'')}"><input type="hidden" name="item_name[]" value="${escapeHtml(selectedProduct.name)}"></td>
-      <td><input type="number" name="quantity[]" min="0.001" step="0.001" value="${q}"></td>
-      <td><input type="number" name="unit_price[]" min="0" step="0.01" value="${p}"></td>
-      <td><input type="number" name="discount_percent[]" min="0" max="100" step="0.01" value="${d}"></td>
-      <td><input type="number" name="tax_percent[]" min="0" max="100" step="0.01" value="${t}"></td>
-      <td class="line-total">0.00</td><td><button type="button" class="pos-remove" title="حذف الصنف">×</button></td>`;
+    row.innerHTML=`<td data-label="#" class="row-number"></td><td data-label="الرقم التجاري">${escapeHtml(selectedProduct.sku||'')}</td><td data-label="الاسم التجاري">${escapeHtml(selectedProduct.name)}<input type="hidden" name="item_code[]" value="${escapeHtml(selectedProduct.sku||'')}"><input type="hidden" name="item_name[]" value="${escapeHtml(selectedProduct.name)}"></td>
+      <td data-label="الكمية"><input type="number" name="quantity[]" min="0.001" step="0.001" value="${q}"></td>
+      <td data-label="السعر"><input type="number" name="unit_price[]" min="0" step="0.01" value="${p}"></td>
+      <td data-label="الخصم %"><input type="number" name="discount_percent[]" min="0" max="100" step="0.01" value="${d}"></td>
+      <td data-label="الضريبة %"><input type="number" name="tax_percent[]" min="0" max="100" step="0.01" value="${t}"></td>
+      <td data-label="الإجمالي" class="line-total">0.00</td><td data-label="حذف"><button type="button" class="pos-remove" title="حذف الصنف">×</button></td>`;
     row.querySelectorAll('input[type="number"]').forEach(input=>input.addEventListener('input',recalc));
     row.querySelector('.pos-remove').addEventListener('click',()=>{row.remove(); ensureEmpty(); recalc(); focusSearch();});
     tbody.appendChild(row); recalc();
