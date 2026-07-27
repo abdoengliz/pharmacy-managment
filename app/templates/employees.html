@@ -55,6 +55,13 @@
   {% set status_names={'active':'على رأس العمل','leave':'في إجازة','suspended':'موقوف','resigned':'مستقيل'} %}
   {% for r in rows %}<tr><td>{{ r.employee_no }}{% if r.employee_code %}<br><small>{{ r.employee_code }}</small>{% endif %}</td><td><strong>{{ r.full_name }}</strong><br><small>{{ r.department or '-' }}</small></td><td>{{ r.job_title or '-' }}</td><td>{{ r.branch_name or 'بدون فرع' }}</td><td>{{ r.phone or '-' }}</td><td>{{ '%.2f'|format(r.basic_salary) }}</td><td><span class="status {{ 'active' if r.employment_status=='active' else 'cancelled' }}">{{ status_names.get(r.employment_status,r.employment_status) }}</span></td><td class="employee-actions"><a class="button-link" href="{{ url_for('employee_detail', employee_id=r.id) }}">عرض</a>{% if has_permission('edit_employees') %}<a class="button-link" href="{{ url_for('edit_employee', employee_id=r.id) }}">تعديل</a>{% endif %}</td></tr>{% else %}<tr><td colspan="8" class="empty">لا توجد بيانات موظفين مطابقة.</td></tr>{% endfor %}
   </table></div>
+  {% if total_pages > 1 %}
+  <nav class="pagination" aria-label="صفحات الموظفين">
+    {% if page > 1 %}<a class="button-link" href="{{ url_for('employees', page=page-1, q=q, status=selected_status, branch_id=selected_branch) }}">السابق</a>{% endif %}
+    <span>الصفحة {{ page }} من {{ total_pages }} — {{ total_rows }} موظف</span>
+    {% if page < total_pages %}<a class="button-link" href="{{ url_for('employees', page=page+1, q=q, status=selected_status, branch_id=selected_branch) }}">التالي</a>{% endif %}
+  </nav>
+  {% endif %}
 </section>
 </div>
 {% endblock %}

@@ -86,15 +86,23 @@ def employees() -> Any:
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "all")
     branch_id = request.args.get("branch_id", type=int)
+    page = max(request.args.get("page", 1, type=int) or 1, 1)
+    per_page = 50
     where = ["1=1"]
+    scope_where = ["1=1"]
     params: list[Any] = []
+    scope_params: list[Any] = []
     user = current_user()
     if user and user["role"] != "admin" and user["branch_id"]:
         where.append("e.branch_id=?")
+        scope_where.append("branch_id=?")
         params.append(user["branch_id"])
+        scope_params.append(user["branch_id"])
     elif branch_id:
         where.append("e.branch_id=?")
+        scope_where.append("branch_id=?")
         params.append(branch_id)
+        scope_params.append(branch_id)
     if q:
         where.append("(e.full_name LIKE ? OR e.employee_no LIKE ? OR e.employee_code LIKE ? OR e.phone LIKE ? OR e.job_title LIKE ?)")
         like = f"%{q}%"
@@ -102,32 +110,80 @@ def employees() -> Any:
     if status != "all":
         where.append("e.employment_status=?")
         params.append(status)
+
+    total_rows = db.execute(
+        f"SELECT COUNT(*) total FROM employees e WHERE {' AND '.join(where)}", params
+    ).fetchone()["total"]
+    total_pages = max((total_rows + per_page - 1) // per_page, 1)
+    page = min(page, total_pages)
+    offset = (page - 1) * per_page
     rows = db.execute(
         f"""SELECT e.*, b.name branch_name FROM employees e
             LEFT JOIN branches b ON b.id=e.branch_id
-            WHERE {' AND '.join(where)} ORDER BY e.is_active DESC,e.full_name""", params
+            WHERE {' AND '.join(where)}
+            ORDER BY e.is_active DESC,e.full_name
+            LIMIT ? OFFSET ?""", [*params, per_page, offset]
     ).fetchall()
-    branches = db.execute("SELECT * FROM branches WHERE is_active=1 ORDER BY name").fetchall()
-    departments = db.execute("SELECT * FROM departments WHERE is_active=1 ORDER BY name").fetchall()
-    jobs = db.execute("SELECT * FROM jobs WHERE is_active=1 ORDER BY name").fetchall()
-    stats = db.execute("""SELECT COUNT(*) total,
-        SUM(CASE WHEN employment_status='active' THEN 1 ELSE 0 END) active,
-        SUM(CASE WHEN employment_status='leave' THEN 1 ELSE 0 END) on_leave,
-        SUM(CASE WHEN employment_status='suspended' THEN 1 ELSE 0 END) suspended,
-        SUM(CASE WHEN employment_status='resigned' THEN 1 ELSE 0 END) resigned FROM employees""").fetchone()
+    branches = db.execute("SELECT id,name FROM branches WHERE is_active=1 ORDER BY name").fetchall()
+    departments = db.execute("SELECT id,name FROM departments WHERE is_active=1 ORDER BY name").fetchall()
+    jobs = db.execute("SELECT id,name FROM jobs WHERE is_active=1 ORDER BY name").fetchall()
+    stats = db.execute(f"""SELECT COUNT(*) total,
+        COALESCE(SUM(CASE WHEN employment_status='active' THEN 1 ELSE 0 END),0) active,
+        COALESCE(SUM(CASE WHEN employment_status='leave' THEN 1 ELSE 0 END),0) on_leave,
+        COALESCE(SUM(CASE WHEN employment_status='suspended' THEN 1 ELSE 0 END),0) suspended,
+        COALESCE(SUM(CASE WHEN employment_status='resigned' THEN 1 ELSE 0 END),0) resigned
+        FROM employees WHERE {' AND '.join(scope_where)}""", scope_params).fetchone()
     return render_template("employees.html", rows=rows, branches=branches, stats=stats,
                            selected_branch=branch_id, selected_status=status, q=q,
                            departments=departments, jobs=jobs,
+                           page=page, per_page=per_page, total_rows=total_rows, total_pages=total_pages,
                            next_employee_no=next_employee_number(db), today=datetime.now().date().isoformat())
 
 @app.route("/employees/<int:employee_id>")
 @login_required
 @permission_required("view_employees")
 def employee_detail(employee_id: int) -> Any:
-    row = get_db().execute(
-        """SELECT e.*,b.name branch_name,u.full_name created_by_name FROM employees e
-           LEFT JOIN branches b ON b.id=e.branch_id LEFT JOIN users u ON u.id=e.created_by WHERE e.id=?""",
-        (employee_id,),
+    db = get_db()
+    month = datetime.now().strftime("%Y-%m")
+    row = db.execute(
+        """SELECT e.*, b.name branch_name, u.full_name created_by_name,
+           COALESCE(ms.present_days,0) present_days,
+           COALESCE(ms.absent_days,0) absent_days,
+           COALESCE(ms.late_days,0) late_days,
+           COALESCE(ms.overtime,0) overtime,
+           COALESCE(ls.approved_days,0) approved_days,
+           COALESCE(ls.pending_requests,0) pending_requests,
+           COALESCE(fs.advances,0) advances,
+           COALESCE(fs.bonuses,0) bonuses,
+           COALESCE(fs.deductions,0) deductions
+           FROM employees e
+           LEFT JOIN branches b ON b.id=e.branch_id
+           LEFT JOIN users u ON u.id=e.created_by
+           LEFT JOIN (
+               SELECT employee_id,
+                 SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) present_days,
+                 SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) absent_days,
+                 SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) late_days,
+                 COALESCE(SUM(overtime_hours),0) overtime
+               FROM employee_attendance
+               WHERE employee_id=? AND substr(work_date,1,7)=?
+               GROUP BY employee_id
+           ) ms ON ms.employee_id=e.id
+           LEFT JOIN (
+               SELECT employee_id,
+                 COALESCE(SUM(CASE WHEN status='approved' THEN days ELSE 0 END),0) approved_days,
+                 COALESCE(SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END),0) pending_requests
+               FROM employee_leaves WHERE employee_id=? GROUP BY employee_id
+           ) ls ON ls.employee_id=e.id
+           LEFT JOIN (
+               SELECT employee_id,
+                 COALESCE(SUM(CASE WHEN adjustment_type='advance' AND status='approved' THEN amount ELSE 0 END),0) advances,
+                 COALESCE(SUM(CASE WHEN adjustment_type='bonus' AND status='approved' THEN amount ELSE 0 END),0) bonuses,
+                 COALESCE(SUM(CASE WHEN adjustment_type='deduction' AND status='approved' THEN amount ELSE 0 END),0) deductions
+               FROM employee_adjustments WHERE employee_id=? GROUP BY employee_id
+           ) fs ON fs.employee_id=e.id
+           WHERE e.id=?""",
+        (employee_id, month, employee_id, employee_id, employee_id),
     ).fetchone()
     if not row:
         flash("الموظف غير موجود.", "danger")
@@ -136,31 +192,19 @@ def employee_detail(employee_id: int) -> Any:
     if user and user["role"] != "admin" and user["branch_id"] and row["branch_id"] != user["branch_id"]:
         flash("لا يمكنك عرض موظفي موقع آخر.", "danger")
         return redirect(url_for("employees"))
-    db = get_db()
+
     attendance = db.execute("SELECT * FROM employee_attendance WHERE employee_id=? ORDER BY work_date DESC LIMIT 31", (employee_id,)).fetchall()
     leaves = db.execute("SELECT * FROM employee_leaves WHERE employee_id=? ORDER BY start_date DESC,id DESC LIMIT 20", (employee_id,)).fetchall()
     adjustments = db.execute("SELECT * FROM employee_adjustments WHERE employee_id=? ORDER BY adjustment_date DESC,id DESC LIMIT 30", (employee_id,)).fetchall()
     payroll = db.execute("SELECT * FROM employee_payroll WHERE employee_id=? ORDER BY payroll_month DESC LIMIT 18", (employee_id,)).fetchall()
-    month = datetime.now().strftime("%Y-%m")
-    month_stats = db.execute("""SELECT
-        SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) present_days,
-        SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) absent_days,
-        SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) late_days,
-        COALESCE(SUM(overtime_hours),0) overtime
-        FROM employee_attendance WHERE employee_id=? AND substr(work_date,1,7)=?""", (employee_id, month)).fetchone()
-    leave_stats = db.execute("""SELECT
-        COALESCE(SUM(CASE WHEN status='approved' THEN days ELSE 0 END),0) approved_days,
-        COALESCE(SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END),0) pending_requests
-        FROM employee_leaves WHERE employee_id=?""", (employee_id,)).fetchone()
-    finance_stats = db.execute("""SELECT
-        COALESCE(SUM(CASE WHEN adjustment_type='advance' AND status='approved' THEN amount ELSE 0 END),0) advances,
-        COALESCE(SUM(CASE WHEN adjustment_type='bonus' AND status='approved' THEN amount ELSE 0 END),0) bonuses,
-        COALESCE(SUM(CASE WHEN adjustment_type='deduction' AND status='approved' THEN amount ELSE 0 END),0) deductions
-        FROM employee_adjustments WHERE employee_id=?""", (employee_id,)).fetchone()
-    latest_payroll = db.execute("SELECT * FROM employee_payroll WHERE employee_id=? ORDER BY payroll_month DESC LIMIT 1", (employee_id,)).fetchone()
 
-    history = []
-    history.append({"date": row["created_at"] or row["hire_date"], "type": "hire", "title": "إضافة الموظف إلى النظام", "details": f"الرقم الوظيفي {row['employee_no']}"})
+    month_stats = {"present_days": row["present_days"], "absent_days": row["absent_days"],
+                   "late_days": row["late_days"], "overtime": row["overtime"]}
+    leave_stats = {"approved_days": row["approved_days"], "pending_requests": row["pending_requests"]}
+    finance_stats = {"advances": row["advances"], "bonuses": row["bonuses"], "deductions": row["deductions"]}
+    latest_payroll = payroll[0] if payroll else None
+
+    history = [{"date": row["created_at"] or row["hire_date"], "type": "hire", "title": "إضافة الموظف إلى النظام", "details": f"الرقم الوظيفي {row['employee_no']}"}]
     for item in attendance[:12]:
         label = {"present": "حضور", "absent": "غياب", "late": "تأخير", "leave": "إجازة", "holiday": "عطلة"}.get(item["status"], item["status"])
         history.append({"date": item["work_date"], "type": "attendance", "title": f"تسجيل {label}", "details": item["notes"] or "سجل حضور وانصراف"})
