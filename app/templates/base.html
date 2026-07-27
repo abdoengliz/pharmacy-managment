@@ -39,6 +39,22 @@
       {% block content %}{% endblock %}
     </main>
   </section>
+  <div class="mobile-quick-backdrop" id="mobileQuickBackdrop" aria-hidden="true"></div>
+  <section class="mobile-quick-sheet" id="mobileQuickSheet" aria-label="الإجراءات السريعة" aria-hidden="true">
+    <div class="mobile-quick-handle" aria-hidden="true"></div>
+    <div class="mobile-quick-head"><div><strong>إجراء سريع</strong><small>اختر العملية التي تريد تنفيذها</small></div><button type="button" id="mobileQuickClose" class="icon-btn" aria-label="إغلاق">×</button></div>
+    <div class="mobile-quick-grid">
+      {% if has_permission('view_sales') %}<a href="{{ url_for('sales_invoices_page') }}"><span>🛒</span><strong>فاتورة بيع</strong><small>فتح المبيعات</small></a>{% endif %}
+      {% if has_permission('view_revenue') %}<a href="{{ url_for('revenues') }}"><span>＋</span><strong>إيراد</strong><small>تسجيل إيراد</small></a>{% endif %}
+      {% if has_permission('view_expenses') %}<a href="{{ url_for('expenses') }}"><span>−</span><strong>مصروف</strong><small>تسجيل مصروف</small></a>{% endif %}
+      {% if has_permission('view_inventory') %}<a href="{{ url_for('inventory') }}"><span>📦</span><strong>المخزون</strong><small>بحث وحركة صنف</small></a>{% endif %}
+      {% if has_permission('view_suppliers') %}<a href="{{ url_for('suppliers') }}"><span>♙</span><strong>الموردون</strong><small>الحسابات والسدادات</small></a>{% endif %}
+      <a href="{{ url_for('tasks_page') }}"><span>☑</span><strong>مهمة</strong><small>المهام والمتابعة</small></a>
+      <button type="button" id="mobileQuickSearch"><span>⌕</span><strong>بحث</strong><small>البحث في النظام</small></button>
+      <button type="button" id="mobileQuickMore"><span>☰</span><strong>المزيد</strong><small>كل أقسام النظام</small></button>
+    </div>
+  </section>
+  <button class="mobile-fab" id="mobileFab" type="button" aria-label="فتح الإجراءات السريعة" aria-expanded="false"><span>＋</span></button>
   <nav class="mobile-bottom-nav" aria-label="التنقل السريع للهاتف">
     {% if has_permission('view_dashboard') %}<a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}"><span>⌂</span><small>الرئيسية</small></a>{% endif %}
     {% if has_permission('view_sales') %}<a href="{{ url_for('sales_invoices_page') }}" class="{{ 'active' if request.endpoint in ['sales_invoices_page','sales_invoice_detail'] else '' }}"><span>🛒</span><small>المبيعات</small></a>{% elif has_permission('view_revenue') %}<a href="{{ url_for('revenues') }}" class="{{ 'active' if request.endpoint == 'revenues' else '' }}"><span>＋</span><small>الإيرادات</small></a>{% endif %}
@@ -113,6 +129,28 @@ document.querySelectorAll('main.container table').forEach(table=>{
     });
   }
 });
+const mobileFab=document.getElementById('mobileFab');
+const mobileQuickSheet=document.getElementById('mobileQuickSheet');
+const mobileQuickBackdrop=document.getElementById('mobileQuickBackdrop');
+const mobileQuickClose=document.getElementById('mobileQuickClose');
+function setMobileQuick(open){
+  if(!mobileQuickSheet)return;
+  document.body.classList.toggle('mobile-quick-open',open);
+  mobileQuickSheet.setAttribute('aria-hidden',open?'false':'true');
+  if(mobileQuickBackdrop)mobileQuickBackdrop.setAttribute('aria-hidden',open?'false':'true');
+  if(mobileFab)mobileFab.setAttribute('aria-expanded',open?'true':'false');
+}
+if(mobileFab)mobileFab.addEventListener('click',()=>setMobileQuick(!document.body.classList.contains('mobile-quick-open')));
+if(mobileQuickClose)mobileQuickClose.addEventListener('click',()=>setMobileQuick(false));
+if(mobileQuickBackdrop)mobileQuickBackdrop.addEventListener('click',()=>setMobileQuick(false));
+const mobileQuickSearch=document.getElementById('mobileQuickSearch');
+if(mobileQuickSearch)mobileQuickSearch.addEventListener('click',()=>{
+  setMobileQuick(false);
+  if(globalSearchForm){globalSearchForm.classList.add('mobile-open');const field=globalSearchForm.querySelector('input[type=search]');if(field)setTimeout(()=>field.focus(),120)}
+});
+const mobileQuickMore=document.getElementById('mobileQuickMore');
+if(mobileQuickMore)mobileQuickMore.addEventListener('click',()=>{setMobileQuick(false);setAppMenu(true)});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')setMobileQuick(false)});
 const mobileMoreMenu=document.getElementById('mobileMoreMenu');
 if(mobileMoreMenu) mobileMoreMenu.addEventListener('click',()=>setAppMenu(true));
 </script>
