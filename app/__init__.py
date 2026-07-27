@@ -120,7 +120,16 @@ def internal_error(error):
 def create_app() -> Flask:
     _configure_logging()
     from .core import init_db
+    from .db_compat import using_postgres
     from . import routes  # noqa: F401
-    init_db()
+
+    # Avoid schema/index DDL on every Vercel cold start. Concurrent serverless
+    # instances can deadlock while creating indexes or altering PostgreSQL tables.
+    force_db_init = os.environ.get("RUN_DB_INIT", "").strip().lower() in {"1", "true", "yes"}
+    if not (IS_VERCEL and using_postgres()) or force_db_init:
+        init_db()
+    else:
+        app.logger.info("Skipped automatic database initialization on Vercel/PostgreSQL")
+
     app.logger.info("Application initialized in %s mode", ENVIRONMENT)
     return app
