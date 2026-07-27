@@ -274,3 +274,56 @@ textarea{resize:vertical}
   .employee-stats,.hr-stats{grid-template-columns:1fr!important}
   table.mobile-card-table td{grid-template-columns:82px 1fr}
 }
+
+
+/* v6.3.8 — Mobile & iPad Stage 3: tablet workspace and touch polish */
+.sidebar nav a.active{background:#ffffff1c;color:#fff;box-shadow:inset -3px 0 0 #fff}
+.mobile-nav-count{position:absolute;top:-3px;inset-inline-start:50%;margin-inline-start:5px;min-width:17px;height:17px;padding:0 4px;border-radius:20px;background:#dc2626;color:#fff;font-size:.62rem;line-height:17px;text-align:center}
+.mobile-bottom-nav a>span,.mobile-bottom-nav button>span{position:relative}
+
+/* Tablet / iPad layout: spacious two-column workspace with drawer navigation. */
+@media(min-width:641px) and (max-width:1100px){
+  body.app-focus-mode .sidebar{width:min(42vw,340px);transform:translateX(105%);right:0;z-index:120;padding:20px 16px max(20px,env(safe-area-inset-bottom));box-shadow:-20px 0 55px rgba(0,0,0,.22)}
+  body.app-focus-mode.app-menu-open .sidebar{transform:translateX(0)}
+  .sidebar-close{display:grid;place-items:center}
+  .app-menu-backdrop{z-index:110}
+  .app-shell{grid-template-columns:1fr}
+  .topbar{min-height:68px;padding-inline:max(18px,env(safe-area-inset-left));gap:12px}
+  .mobile-search-toggle{display:none}
+  .global-search{display:flex;max-width:440px;min-width:180px}
+  body.app-focus-mode .container{width:auto;margin:20px 18px;padding-bottom:max(20px,env(safe-area-inset-bottom))}
+  .cards,.stats,.erp-stat-grid,.finance-kpi-grid,.manager-stat-grid,.analytics-kpi-grid,.employee-summary-grid,.health-page-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .dashboard-grid,.main-dashboard-grid,.dashboard-pro-grid,.manager-work-grid{grid-template-columns:minmax(0,1.45fr) minmax(260px,.75fr)!important}
+  .analytics-main-grid{grid-template-columns:minmax(0,1.5fr) minmax(260px,.8fr)!important}
+  .analytics-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .analytics-detail-grid>*:last-child{grid-column:1/-1}
+  .grid-form,.form-grid,.grid-2,.report-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .table-wrap{max-width:100%;overflow:auto;-webkit-overflow-scrolling:touch}
+  table{font-size:.92rem}
+  th,td{padding:11px 10px}
+  .actions{gap:7px}
+  .panel,.card{border-radius:16px}
+}
+
+/* Landscape tablets can retain more dashboard density. */
+@media(min-width:900px) and (max-width:1100px) and (orientation:landscape){
+  body.app-focus-mode .container{margin-inline:24px}
+  .cards,.stats,.analytics-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .quick-action-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+@media(max-width:640px){
+  .mobile-bottom-nav{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);overflow:visible}
+  .mobile-bottom-nav a,.mobile-bottom-nav button{position:relative}
+  body.app-menu-open{overflow:hidden;touch-action:none}
+  .topbar{padding-top:max(8px,env(safe-area-inset-top))}
+  input,select,textarea{font-size:16px} /* prevents unwanted iOS zoom */
+  .page-head .actions,.page-heading .actions{margin-top:2px}
+  .pagination,.pager{display:flex;overflow-x:auto;gap:7px;padding-bottom:4px;scrollbar-width:none}
+  .pagination::-webkit-scrollbar,.pager::-webkit-scrollbar{display:none}
+  .modal,.dialog,.modal-content,[role=dialog]{max-width:calc(100vw - 16px);max-height:calc(100dvh - 24px);overflow:auto}
+}
+
+@supports(height:100dvh){
+  body.app-focus-mode .sidebar{height:100dvh}
+}
