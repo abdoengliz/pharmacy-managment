@@ -505,9 +505,13 @@ body{
 body.mobile-quick-open,body.app-focus-mode.app-menu-open{
   overflow-y:hidden!important;
 }
-.mobile-quick-sheet,.sidebar nav,.notification-dropdown,.table-wrap{
+.mobile-quick-sheet,.sidebar nav,.notification-dropdown{
   -webkit-overflow-scrolling:touch;
   touch-action:pan-y;
+}
+.table-wrap{
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-x pan-y;
 }
 
 /* v6.4.5 — definitive installed-app content scroll fix
@@ -763,4 +767,48 @@ body.mobile-quick-open,body.app-focus-mode.app-menu-open{
 }
 @media(max-width:1000px){
   .page-dashboard .employee-performance-table{min-width:900px}
+}
+
+
+/* v6.6.0 — Tablet horizontal swipe fix for employees table */
+.employee-table-scroll{
+  display:block;
+  width:100%;
+  max-width:100%;
+  overflow-x:auto!important;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+  touch-action:pan-x pan-y!important;
+  scrollbar-gutter:stable;
+}
+.employee-table-scroll .employee-mobile-list{
+  min-width:980px;
+  width:max-content;
+  width:100%;
+}
+.employee-table-scroll:focus{
+  outline:2px solid color-mix(in srgb,var(--primary) 40%,transparent);
+  outline-offset:2px;
+}
+@media (min-width:641px) and (max-width:1100px){
+  .employee-table-scroll{
+    cursor:grab;
+  }
+  .employee-table-scroll:active{
+    cursor:grabbing;
+  }
+  .employee-table-scroll .employee-mobile-list{
+    min-width:1050px;
+  }
+}
+@media (max-width:640px){
+  .employee-table-scroll{
+    overflow:visible!important;
+    touch-action:pan-y!important;
+  }
+  .employee-table-scroll .employee-mobile-list{
+    min-width:0!important;
+    width:100%;
+  }
 }
