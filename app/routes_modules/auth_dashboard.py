@@ -594,6 +594,174 @@ def dashboard() -> Any:
     revenue_average = revenue_total / range_days
     best_day = max(zip(chart_values, chart_labels), default=(0, "—"))
 
+    # Daily branch-manager advisor. This intentionally uses today's data,
+    # independent from the dashboard period filter, so the daily alert always
+    # describes the current operating day.
+    yesterday_iso = (today - timedelta(days=1)).isoformat()
+    seven_days_start_iso = (today - timedelta(days=7)).isoformat()
+    advisor_branch_clause = ""
+    advisor_branch_params: list[Any] = []
+    if selected_branch_id:
+        advisor_branch_clause = " AND branch_id=?"
+        advisor_branch_params = [selected_branch_id]
+
+    advisor_revenue_sql = (
+        "SELECT "
+        "(SELECT COALESCE(SUM(amount),0) FROM revenues WHERE revenue_date=?" + advisor_branch_clause + ") today_revenue,"
+        "(SELECT COALESCE(SUM(invoice_count),0) FROM revenues WHERE revenue_date=?" + advisor_branch_clause + ") today_invoices,"
+        "(SELECT COALESCE(SUM(amount),0) FROM revenues WHERE revenue_date=?" + advisor_branch_clause + ") yesterday_revenue,"
+        "(SELECT COALESCE(SUM(invoice_count),0) FROM revenues WHERE revenue_date=?" + advisor_branch_clause + ") yesterday_invoices,"
+        "(SELECT COALESCE(SUM(amount),0) FROM revenues WHERE revenue_date BETWEEN ? AND ?" + advisor_branch_clause + ") seven_day_revenue,"
+        "(SELECT COALESCE(SUM(invoice_count),0) FROM revenues WHERE revenue_date BETWEEN ? AND ?" + advisor_branch_clause + ") seven_day_invoices"
+    )
+    advisor_revenue_params: list[Any] = []
+    for values in (
+        [today_iso], [today_iso], [yesterday_iso], [yesterday_iso],
+        [seven_days_start_iso, yesterday_iso], [seven_days_start_iso, yesterday_iso],
+    ):
+        advisor_revenue_params.extend(values + advisor_branch_params)
+    advisor_revenue_row = db.execute(advisor_revenue_sql, advisor_revenue_params).fetchone()
+    advisor_today_revenue = float(advisor_revenue_row["today_revenue"] or 0)
+    advisor_today_invoices = int(advisor_revenue_row["today_invoices"] or 0)
+    advisor_yesterday_revenue = float(advisor_revenue_row["yesterday_revenue"] or 0)
+    advisor_yesterday_invoices = int(advisor_revenue_row["yesterday_invoices"] or 0)
+    advisor_week_average = float(advisor_revenue_row["seven_day_revenue"] or 0) / 7
+    advisor_week_invoice_average = float(advisor_revenue_row["seven_day_invoices"] or 0) / 7
+    advisor_today_average_invoice = advisor_today_revenue / advisor_today_invoices if advisor_today_invoices else 0.0
+    advisor_week_average_invoice = (
+        float(advisor_revenue_row["seven_day_revenue"] or 0) / int(advisor_revenue_row["seven_day_invoices"] or 0)
+        if int(advisor_revenue_row["seven_day_invoices"] or 0) else 0.0
+    )
+    advisor_revenue_change = percent_change(advisor_today_revenue, advisor_week_average)
+    advisor_invoice_change = percent_change(float(advisor_today_invoices), advisor_week_invoice_average)
+    advisor_average_invoice_change = percent_change(advisor_today_average_invoice, advisor_week_average_invoice)
+
+    advisor_employee_clause = ""
+    advisor_employee_params: list[Any] = [
+        today_iso, seven_days_start_iso, yesterday_iso, seven_days_start_iso, today_iso
+    ]
+    if selected_branch_id:
+        advisor_employee_clause = " AND r.branch_id=?"
+        advisor_employee_params.append(selected_branch_id)
+    advisor_employee_rows = db.execute(
+        "SELECT e.id,e.full_name,"
+        "COALESCE(SUM(CASE WHEN r.revenue_date=? THEN res.amount ELSE 0 END),0) today_total,"
+        "COALESCE(SUM(CASE WHEN r.revenue_date BETWEEN ? AND ? THEN res.amount ELSE 0 END),0) previous_week_total "
+        "FROM revenue_employee_splits res JOIN revenues r ON r.id=res.revenue_id "
+        "JOIN employees e ON e.id=res.employee_id WHERE r.revenue_date BETWEEN ? AND ?" + advisor_employee_clause +
+        " GROUP BY e.id,e.full_name ORDER BY today_total DESC,e.full_name",
+        advisor_employee_params,
+    ).fetchall()
+    advisor_employees = []
+    for row in advisor_employee_rows:
+        today_total = float(row["today_total"] or 0)
+        previous_daily_average = float(row["previous_week_total"] or 0) / 7
+        advisor_employees.append({
+            "employee_id": int(row["id"]),
+            "full_name": row["full_name"],
+            "today_total": today_total,
+            "previous_daily_average": previous_daily_average,
+            "change": percent_change(today_total, previous_daily_average),
+        })
+    active_advisor_employees = [item for item in advisor_employees if item["today_total"] > 0]
+    advisor_team_average = (
+        sum(item["today_total"] for item in active_advisor_employees) / len(active_advisor_employees)
+        if active_advisor_employees else 0.0
+    )
+    advisor_top_employee = active_advisor_employees[0] if active_advisor_employees else None
+    advisor_low_employee = min(active_advisor_employees, key=lambda item: item["today_total"], default=None)
+
+    advisor_insights: list[dict[str, Any]] = []
+    if advisor_revenue_change is None:
+        advisor_insights.append({
+            "severity": "neutral", "icon": "ℹ️", "label": "بداية اليوم",
+            "title": "لا توجد بيانات مقارنة كافية بعد",
+            "message": "سيبدأ المستشار بإظهار مقارنة أدق بعد تسجيل إيرادات اليوم ووجود بيانات للأيام السابقة.",
+            "action": "عرض الإيرادات", "url": url_for("revenues"),
+        })
+    else:
+        revenue_abs = abs(advisor_revenue_change)
+        if advisor_revenue_change <= -20:
+            severity, icon, label = "danger", "🔴", "يحتاج انتباه"
+        elif advisor_revenue_change <= -10:
+            severity, icon, label = "warning", "🟡", "متابعة"
+        elif advisor_revenue_change >= 10:
+            severity, icon, label = "success", "🟢", "مؤشر إيجابي"
+        else:
+            severity, icon, label = "neutral", "🔵", "أداء مستقر"
+        direction = "ارتفع" if advisor_revenue_change >= 0 else "انخفض"
+        reason = ""
+        if advisor_invoice_change is not None and advisor_average_invoice_change is not None:
+            if advisor_invoice_change < -8 and abs(advisor_invoice_change) >= abs(advisor_average_invoice_change):
+                reason = f" والسبب الأوضح هو انخفاض عدد الفواتير بنسبة {abs(advisor_invoice_change):.1f}%"
+            elif advisor_average_invoice_change < -8:
+                reason = f" والسبب الأوضح هو انخفاض متوسط قيمة الفاتورة بنسبة {abs(advisor_average_invoice_change):.1f}%"
+            elif advisor_invoice_change > 8:
+                reason = f" وساهم ارتفاع عدد الفواتير بنسبة {advisor_invoice_change:.1f}% في هذه النتيجة"
+            elif advisor_average_invoice_change > 8:
+                reason = f" وساهم ارتفاع متوسط الفاتورة بنسبة {advisor_average_invoice_change:.1f}% في هذه النتيجة"
+        advisor_insights.append({
+            "severity": severity, "icon": icon, "label": label,
+            "title": f"{direction} إيراد اليوم بنسبة {revenue_abs:.1f}%",
+            "message": f"إيراد اليوم {advisor_today_revenue:.2f} مقارنة بمتوسط يومي {advisor_week_average:.2f} خلال آخر 7 أيام{reason}.",
+            "action": "عرض الإيرادات", "url": url_for("revenues"),
+        })
+
+    if advisor_top_employee:
+        top_change = advisor_top_employee["change"]
+        top_change_text = ""
+        if top_change is not None:
+            top_change_text = f"، بتغير {'+' if top_change >= 0 else ''}{top_change:.1f}% عن متوسطه اليومي السابق"
+        advisor_insights.append({
+            "severity": "success", "icon": "🏆", "label": "أفضل أداء اليوم",
+            "title": advisor_top_employee["full_name"],
+            "message": f"حقق أعلى إيراد بين الموظفين اليوم بقيمة {advisor_top_employee['today_total']:.2f}{top_change_text}.",
+            "action": "تحليل الموظفين", "url": "#employeePerformanceSection",
+            "employee_id": advisor_top_employee["employee_id"],
+        })
+    if advisor_low_employee and len(active_advisor_employees) > 1 and advisor_team_average > 0:
+        low_gap = percent_change(advisor_low_employee["today_total"], advisor_team_average)
+        if low_gap is not None and low_gap <= -20:
+            advisor_insights.append({
+                "severity": "warning", "icon": "🟡", "label": "يحتاج متابعة",
+                "title": f"أداء {advisor_low_employee['full_name']} أقل من متوسط الفريق",
+                "message": f"إيراده اليوم أقل من متوسط الموظفين النشطين بنسبة {abs(low_gap):.1f}%. راجع عدد الفواتير وفترة المناوبة قبل اتخاذ أي قرار.",
+                "action": "عرض تحليل الموظف", "url": "#employeePerformanceSection",
+                "employee_id": advisor_low_employee["employee_id"],
+            })
+
+    advisor_severity_order = {"danger": 0, "warning": 1, "success": 2, "neutral": 3}
+    advisor_insights.sort(key=lambda item: advisor_severity_order.get(item["severity"], 9))
+    advisor_insights = advisor_insights[:3]
+    if any(item["severity"] == "danger" for item in advisor_insights):
+        advisor_status = {"tone": "danger", "icon": "🔴", "label": "الفرع يحتاج متابعة اليوم"}
+    elif any(item["severity"] == "warning" for item in advisor_insights):
+        advisor_status = {"tone": "warning", "icon": "🟡", "label": "الأداء مستقر مع نقاط للمتابعة"}
+    elif advisor_today_revenue > 0:
+        advisor_status = {"tone": "success", "icon": "🟢", "label": "أداء الفرع جيد اليوم"}
+    else:
+        advisor_status = {"tone": "neutral", "icon": "🔵", "label": "بانتظار تسجيل حركة اليوم"}
+    advisor_recommendation = "راجع المؤشرات مرة أخرى قرب نهاية الدوام للحصول على قراءة يومية مكتملة."
+    if advisor_revenue_change is not None and advisor_revenue_change <= -10:
+        if advisor_invoice_change is not None and advisor_invoice_change < -8:
+            advisor_recommendation = "راجع توزيع الموظفين وحركة العملاء في الفترات الهادئة، لأن عدد الفواتير هو العامل الأكثر تأثيرًا اليوم."
+        elif advisor_average_invoice_change is not None and advisor_average_invoice_change < -8:
+            advisor_recommendation = "راجع مزيج المنتجات وقيمة السلة، لأن متوسط الفاتورة أقل من المعتاد اليوم."
+    elif advisor_top_employee and advisor_top_employee.get("change") is not None and advisor_top_employee["change"] >= 15:
+        advisor_recommendation = f"تابع أسلوب عمل {advisor_top_employee['full_name']} اليوم؛ أداؤه تحسن بوضوح ويمكن الاستفادة من تجربته مع الفريق."
+
+    manager_advisor = {
+        "date": today_iso,
+        "status": advisor_status,
+        "insights": advisor_insights,
+        "recommendation": advisor_recommendation,
+        "today_revenue": advisor_today_revenue,
+        "today_invoices": advisor_today_invoices,
+        "average_invoice": advisor_today_average_invoice,
+        "user_id": int(user["id"]),
+        "branch_id": selected_branch_id or 0,
+    }
+
     t_scope, t_params = task_scope()
     manager_tasks = db.execute(
         "SELECT t.*,b.name location_name FROM tasks t LEFT JOIN branches b ON b.id=t.location_id "
@@ -648,6 +816,7 @@ def dashboard() -> Any:
         "employee_revenue_analysis": employee_revenue_analysis,
         "revenue_average": revenue_average,
         "best_revenue_day": {"value": best_day[0], "label": best_day[1]},
+        "manager_advisor": manager_advisor,
         "dashboard_cache_hit": False,
     }
     _dashboard_cache_put(cache_key, dashboard_context)

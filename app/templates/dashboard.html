@@ -31,6 +31,56 @@
   <strong class="analytics-period-label">{{ period_label }}</strong>
 </form>
 
+<section class="panel manager-advisor-card advisor-{{ manager_advisor.status.tone }}" id="managerAdvisorCard">
+  <div class="manager-advisor-head">
+    <div class="manager-advisor-title">
+      <span class="manager-advisor-robot">🤖</span>
+      <div><p class="eyebrow">الملخص اليومي</p><h2>مستشار مدير الفرع</h2><span>{{ manager_advisor.status.icon }} {{ manager_advisor.status.label }}</span></div>
+    </div>
+    <button type="button" class="btn advisor-open-button" id="openManagerAdvisor">عرض ملخص اليوم</button>
+  </div>
+  <div class="manager-advisor-preview">
+    {% for insight in manager_advisor.insights %}
+    <article class="advisor-preview-item advisor-item-{{ insight.severity }}">
+      <span>{{ insight.icon }}</span><div><small>{{ insight.label }}</small><strong>{{ insight.title }}</strong><p>{{ insight.message }}</p></div>
+    </article>
+    {% endfor %}
+  </div>
+  <div class="advisor-recommendation"><span>🎯</span><div><small>توصية اليوم</small><strong>{{ manager_advisor.recommendation }}</strong></div></div>
+</section>
+
+<div class="manager-advisor-modal" id="managerAdvisorModal" hidden>
+  <div class="manager-advisor-backdrop" data-close-manager-advisor></div>
+  <section class="manager-advisor-dialog" role="dialog" aria-modal="true" aria-labelledby="managerAdvisorTitle">
+    <header class="manager-advisor-dialog-head">
+      <div class="manager-advisor-title"><span class="manager-advisor-robot">🤖</span><div><p class="eyebrow">تنبيهك اليومي</p><h2 id="managerAdvisorTitle">مستشار مدير الفرع</h2><span>{{ manager_advisor.status.icon }} {{ manager_advisor.status.label }}</span></div></div>
+      <button type="button" class="employee-analysis-close" data-close-manager-advisor aria-label="إغلاق">×</button>
+    </header>
+    <div class="manager-advisor-dialog-body">
+      <div class="advisor-daily-kpis">
+        <div><small>إيراد اليوم</small><strong>{{ '%.2f'|format(manager_advisor.today_revenue) }}</strong><span>{{ app_settings.get('currency','د.ل') }}</span></div>
+        <div><small>عدد الفواتير</small><strong>{{ manager_advisor.today_invoices }}</strong></div>
+        <div><small>متوسط الفاتورة</small><strong>{{ '%.2f'|format(manager_advisor.average_invoice) }}</strong><span>{{ app_settings.get('currency','د.ل') }}</span></div>
+      </div>
+      <div class="advisor-insight-list">
+        {% for insight in manager_advisor.insights %}
+        <article class="advisor-insight advisor-item-{{ insight.severity }}">
+          <span class="advisor-insight-icon">{{ insight.icon }}</span>
+          <div><small>{{ insight.label }}</small><h3>{{ insight.title }}</h3><p>{{ insight.message }}</p>
+            <a href="{{ insight.url }}" class="text-link advisor-action"{% if insight.employee_id %} data-advisor-employee-id="{{ insight.employee_id }}"{% endif %}>{{ insight.action }} ←</a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      <div class="advisor-recommendation advisor-modal-recommendation"><span>🎯</span><div><small>توصية اليوم</small><strong>{{ manager_advisor.recommendation }}</strong></div></div>
+      <div class="advisor-modal-actions">
+        <button type="button" class="btn" id="snoozeManagerAdvisor">ذكّرني لاحقًا اليوم</button>
+        <button type="button" class="btn primary" id="reviewManagerAdvisor">تمت المراجعة</button>
+      </div>
+    </div>
+  </section>
+</div>
+
 <div class="manager-work-grid">
   <section class="panel manager-tasks-panel">
     <div class="panel-head"><div><h2>📋 مهام مدير الفرع</h2><span>{{ task_summary.open }} مفتوحة · {{ task_summary.high }} عاجلة · {{ task_summary.overdue }} متأخرة</span></div><a class="text-link" href="{{ url_for('tasks_page') }}">عرض الكل</a></div>
@@ -102,7 +152,7 @@
 </section>
 
 <section class="analytics-detail-grid employee-analytics-grid">
-  <article class="panel employee-performance-panel">
+  <article class="panel employee-performance-panel" id="employeePerformanceSection">
     <div class="panel-head employee-performance-head">
       <div><h2>👥 أداء الموظفين خلال الفترة</h2><span>الإيرادات والفواتير ونسبة مساهمة كل موظف</span></div>
       {% if employee_performance %}<span class="employee-count-badge">{{ employee_performance|length }} موظف</span>{% endif %}
@@ -181,6 +231,42 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  const advisorModal = document.getElementById('managerAdvisorModal');
+  const advisorStorageKey = {{ ('manager-advisor:' ~ manager_advisor.user_id ~ ':' ~ manager_advisor.branch_id ~ ':' ~ manager_advisor.date)|tojson }};
+  const advisorSnoozeKey = advisorStorageKey + ':snooze';
+  function openManagerAdvisor(){
+    if(!advisorModal) return;
+    advisorModal.hidden = false;
+    document.body.classList.add('modal-open');
+  }
+  function closeManagerAdvisor(){
+    if(!advisorModal) return;
+    advisorModal.hidden = true;
+    document.body.classList.remove('modal-open');
+  }
+  document.getElementById('openManagerAdvisor')?.addEventListener('click', openManagerAdvisor);
+  document.querySelectorAll('[data-close-manager-advisor]').forEach(item=>item.addEventListener('click', closeManagerAdvisor));
+  document.getElementById('reviewManagerAdvisor')?.addEventListener('click',()=>{
+    try{ localStorage.setItem(advisorStorageKey, 'reviewed'); localStorage.removeItem(advisorSnoozeKey); }catch(_error){}
+    closeManagerAdvisor();
+  });
+  document.getElementById('snoozeManagerAdvisor')?.addEventListener('click',()=>{
+    try{ localStorage.setItem(advisorSnoozeKey, String(Date.now() + (2 * 60 * 60 * 1000))); }catch(_error){}
+    closeManagerAdvisor();
+  });
+  document.querySelectorAll('[data-advisor-employee-id]').forEach(link=>link.addEventListener('click',(event)=>{
+    event.preventDefault();
+    const employeeId = link.dataset.advisorEmployeeId;
+    closeManagerAdvisor();
+    document.getElementById('employeePerformanceSection')?.scrollIntoView({behavior:'smooth',block:'start'});
+    window.setTimeout(()=>document.querySelector(`.employee-analysis-trigger[data-employee-id="${employeeId}"]`)?.click(),450);
+  }));
+  try{
+    const reviewed = localStorage.getItem(advisorStorageKey) === 'reviewed';
+    const snoozedUntil = Number(localStorage.getItem(advisorSnoozeKey) || 0);
+    if(!reviewed && Date.now() >= snoozedUntil) window.setTimeout(openManagerAdvisor, 650);
+  }catch(_error){ window.setTimeout(openManagerAdvisor, 650); }
+
   const labels = {{ chart_labels|tojson }};
   const values = {{ chart_values|tojson }};
   const currency = {{ app_settings.get('currency','د.ل')|tojson }};

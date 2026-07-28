@@ -873,3 +873,23 @@ body.modal-open{overflow:hidden}
   .employee-ranking-row{grid-template-columns:35px minmax(120px,1fr) auto}
   .employee-ranking-row em{display:none}
 }
+
+/* v7.0 Branch Manager Advisor */
+.manager-advisor-card{margin:18px 0;padding:0;overflow:hidden;border:1px solid #dbe6ff;background:linear-gradient(135deg,#fff 0%,#f7f9ff 100%)}
+.manager-advisor-card.advisor-danger{border-color:#fecaca}.manager-advisor-card.advisor-warning{border-color:#fde68a}.manager-advisor-card.advisor-success{border-color:#bbf7d0}
+.manager-advisor-head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 22px;border-bottom:1px solid #e8edf7}
+.manager-advisor-title{display:flex;align-items:center;gap:14px}.manager-advisor-title h2{margin:1px 0 4px}.manager-advisor-title p{margin:0}.manager-advisor-title span:last-child{font-size:.9rem;color:#516078}
+.manager-advisor-robot{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:#eef2ff;font-size:1.65rem;box-shadow:inset 0 0 0 1px #dbe3ff}
+.advisor-open-button{background:#3346b8;color:#fff;border-color:#3346b8;white-space:nowrap}
+.manager-advisor-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:18px 22px}
+.advisor-preview-item{display:flex;gap:11px;padding:14px;border-radius:14px;background:#fff;border:1px solid #e6ebf3;min-width:0}.advisor-preview-item>span{font-size:1.25rem}.advisor-preview-item div{min-width:0}.advisor-preview-item small{display:block;color:#68758b;margin-bottom:4px}.advisor-preview-item strong{display:block}.advisor-preview-item p{margin:6px 0 0;color:#566176;font-size:.88rem;line-height:1.65}
+.advisor-item-danger{border-inline-start:4px solid #dc2626}.advisor-item-warning{border-inline-start:4px solid #d97706}.advisor-item-success{border-inline-start:4px solid #16a34a}.advisor-item-neutral{border-inline-start:4px solid #2563eb}
+.advisor-recommendation{display:flex;align-items:flex-start;gap:12px;margin:0 22px 20px;padding:14px 16px;border-radius:14px;background:#fff7df;border:1px solid #fde3a4}.advisor-recommendation>span{font-size:1.3rem}.advisor-recommendation small{display:block;color:#8a6514;margin-bottom:3px}.advisor-recommendation strong{line-height:1.7}
+.manager-advisor-modal[hidden]{display:none!important}.manager-advisor-modal{position:fixed;inset:0;z-index:1300;display:grid;place-items:center;padding:20px}.manager-advisor-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.62);backdrop-filter:blur(5px)}
+.manager-advisor-dialog{position:relative;width:min(900px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 28px 80px rgba(15,23,42,.34);border:1px solid #e5e7eb}
+.manager-advisor-dialog-head{position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:20px 22px;background:#fff;border-bottom:1px solid #e7ebf2}
+.manager-advisor-dialog-body{padding:20px 22px 22px}.advisor-daily-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.advisor-daily-kpis>div{padding:15px;border:1px solid #e4e9f2;border-radius:14px;background:#f8faff}.advisor-daily-kpis small{display:block;color:#68758b}.advisor-daily-kpis strong{display:inline-block;font-size:1.45rem;margin-top:6px}.advisor-daily-kpis span{margin-inline-start:5px;color:#68758b}
+.advisor-insight-list{display:grid;gap:12px}.advisor-insight{display:flex;gap:14px;padding:17px;border:1px solid #e6ebf3;border-radius:15px;background:#fff}.advisor-insight-icon{font-size:1.4rem}.advisor-insight small{color:#69758a}.advisor-insight h3{margin:3px 0 7px}.advisor-insight p{margin:0 0 8px;color:#536075;line-height:1.75}.advisor-action{display:inline-block;margin-top:2px}
+.advisor-modal-recommendation{margin:18px 0}.advisor-modal-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:4px}
+@media(max-width:850px){.manager-advisor-preview{grid-template-columns:1fr}.advisor-daily-kpis{grid-template-columns:1fr 1fr}.manager-advisor-head{align-items:flex-start}.manager-advisor-title{align-items:flex-start}}
+@media(max-width:560px){.manager-advisor-head{flex-direction:column}.advisor-open-button{width:100%}.manager-advisor-preview,.manager-advisor-dialog-body{padding:14px}.advisor-recommendation{margin:0 14px 14px}.manager-advisor-modal{padding:7px}.manager-advisor-dialog{max-height:96vh;border-radius:16px}.manager-advisor-dialog-head{padding:15px}.advisor-daily-kpis{grid-template-columns:1fr}.advisor-modal-actions{flex-direction:column-reverse}.advisor-modal-actions .btn{width:100%}}
