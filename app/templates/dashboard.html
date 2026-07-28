@@ -1,35 +1,5 @@
 {% extends "base.html" %}
-{% block title %}لوحة تحكم مدير الفرع — {{ app_settings.get('company_name', 'Pharma ERP') }}<script>
-(() => {
-  const labels = {{ chart_labels|tojson }};
-  const values = {{ chart_values|tojson }};
-  const currency = {{ app_settings.get('currency','د.ل')|tojson }};
-  const canvas = document.getElementById('revenueChart');
-  const empty = document.getElementById('chartEmpty');
-  function drawRevenueChart(){
-    if(!canvas) return;
-    const rect=canvas.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
-    canvas.width=Math.max(600,rect.width)*dpr; canvas.height=310*dpr;
-    const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
-    const w=canvas.width/dpr,h=310,p={l:58,r:22,t:28,b:42};
-    ctx.clearRect(0,0,w,h);
-    const max=Math.max(...values,0); empty.style.display=max<=0?'grid':'none';
-    const top=max>0?max*1.15:1;
-    ctx.font='12px Arial';ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');ctx.textAlign='right';
-    for(let i=0;i<=4;i++){const y=p.t+(h-p.t-p.b)*(i/4);ctx.strokeStyle='rgba(148,163,184,.22)';ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText(Math.round(top*(1-i/4)).toLocaleString('en-US'),p.l-8,y+4)}
-    if(values.length<1||max<=0)return;
-    const step=(w-p.l-p.r)/Math.max(1,values.length-1); const points=values.map((v,i)=>[p.l+i*step,p.t+(h-p.t-p.b)*(1-v/top)]);
-    const grad=ctx.createLinearGradient(0,p.t,0,h-p.b);grad.addColorStop(0,'rgba(16,185,129,.30)');grad.addColorStop(1,'rgba(16,185,129,.02)');
-    ctx.beginPath();ctx.moveTo(points[0][0],h-p.b);points.forEach(pt=>ctx.lineTo(pt[0],pt[1]));ctx.lineTo(points.at(-1)[0],h-p.b);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
-    ctx.beginPath();points.forEach((pt,i)=>i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]));ctx.strokeStyle='#059669';ctx.lineWidth=3;ctx.lineJoin='round';ctx.stroke();
-    points.forEach((pt,i)=>{ctx.beginPath();ctx.arc(pt[0],pt[1],3.5,0,Math.PI*2);ctx.fillStyle='#059669';ctx.fill();if(i===0||i===points.length-1||i%Math.ceil(points.length/8)===0){ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');ctx.textAlign='center';ctx.fillText(labels[i],pt[0],h-15)}});
-  }
-  const payments={{ payment_breakdown|tojson }}; const payCanvas=document.getElementById('paymentChart'),legend=document.getElementById('paymentLegend');
-  function drawPayments(){if(!payCanvas)return;const ctx=payCanvas.getContext('2d'),total=payments.reduce((s,x)=>s+x.value,0),colors=['#059669','#2563eb','#8b5cf6','#f59e0b','#ef4444','#06b6d4'];let angle=-Math.PI/2;ctx.clearRect(0,0,190,190);payments.forEach((x,i)=>{const slice=total?x.value/total*Math.PI*2:0;ctx.beginPath();ctx.arc(95,95,78,angle,angle+slice);ctx.arc(95,95,45,angle+slice,angle,true);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();angle+=slice});ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');ctx.font='bold 15px Arial';ctx.textAlign='center';ctx.fillText(total.toLocaleString('en-US',{maximumFractionDigits:0}),95,92);ctx.font='11px Arial';ctx.fillText(currency,95,110);legend.innerHTML=payments.map((x,i)=>`<div><i style="background:${colors[i%colors.length]}"></i><span>${x.name}</span><strong>${total?(x.value/total*100).toFixed(1):0}%</strong><small>${x.value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</small></div>`).join('')||'<p class="empty-note">لا توجد بيانات.</p>'}
-  drawRevenueChart();drawPayments();window.addEventListener('resize',()=>{clearTimeout(window.__dashResize);window.__dashResize=setTimeout(drawRevenueChart,120)});
-})();
-</script>
-{% endblock %}
+{% block title %}لوحة تحكم مدير الفرع — {{ app_settings.get('company_name', 'Pharma ERP') }}{% endblock %}
 {% block content %}
 <div class="page-heading dashboard-heading manager-heading">
   <div><p class="eyebrow">مركز عمل مدير الفرع</p><h1>لوحة التحكم والتحليلات</h1><p>مؤشرات مالية وتشغيلية لحظية مع تحليل الإيرادات ومقارنة الفترات.</p></div>
@@ -153,4 +123,36 @@
 <section class="panel dashboard-panel attention-panel"><div class="panel-head"><div><h2>🔔 ما يحتاج انتباهك</h2><span>التنبيهات والاعتمادات</span></div></div><div class="attention-list"><a href="{{ url_for('tasks_page') }}"><span>☑ مهام مفتوحة</span><b>{{ dashboard_open_tasks }}</b></a>{% if has_permission('view_approvals') %}<a href="{{ url_for('approvals_center') }}"><span>✓ اعتمادات معلقة</span><b>{{ pending_approvals }}</b></a>{% endif %}<a href="{{ url_for('notifications_page') }}"><span>🔔 إشعارات غير مقروءة</span><b>{{ unread_notification_count }}</b></a></div><div class="mini-notifications">{% for item in recent_notifications %}<a href="{{ url_for('open_notification', notification_id=item.id) }}"><strong>{{ item.title }}</strong><small>{{ item.created_at }}</small></a>{% else %}<p class="empty-note">لا توجد إشعارات حديثة.</p>{% endfor %}</div></section>
 
 {% if has_permission('view_audit') %}<section class="panel dashboard-panel activity-panel"><div class="panel-head"><div><h2>🕒 آخر العمليات</h2><span>أحدث الأنشطة داخل المنظومة</span></div><a class="text-link" href="{{ url_for('audit_page') }}">عرض الكل</a></div><div class="audit-timeline">{% for row in recent %}<div class="audit-item"><span class="audit-dot"></span><div><strong>{{ row.action }}</strong><p>{{ row.details or 'بدون تفاصيل إضافية' }}</p><small>{{ row.user_name }} — {{ row.created_at }}</small></div></div>{% else %}<p class="empty-note">لا توجد عمليات مسجلة.</p>{% endfor %}</div></section>{% endif %}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const labels = {{ chart_labels|tojson }};
+  const values = {{ chart_values|tojson }};
+  const currency = {{ app_settings.get('currency','د.ل')|tojson }};
+  const canvas = document.getElementById('revenueChart');
+  const empty = document.getElementById('chartEmpty');
+  function drawRevenueChart(){
+    if(!canvas) return;
+    const rect=canvas.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+    canvas.width=Math.max(600,rect.width)*dpr; canvas.height=310*dpr;
+    const ctx=canvas.getContext('2d'); ctx.scale(dpr,dpr);
+    const w=canvas.width/dpr,h=310,p={l:58,r:22,t:28,b:42};
+    ctx.clearRect(0,0,w,h);
+    const max=Math.max(...values,0); empty.style.display=max<=0?'grid':'none';
+    const top=max>0?max*1.15:1;
+    ctx.font='12px Arial';ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');ctx.textAlign='right';
+    for(let i=0;i<=4;i++){const y=p.t+(h-p.t-p.b)*(i/4);ctx.strokeStyle='rgba(148,163,184,.22)';ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText(Math.round(top*(1-i/4)).toLocaleString('en-US'),p.l-8,y+4)}
+    if(values.length<1||max<=0)return;
+    const step=(w-p.l-p.r)/Math.max(1,values.length-1); const points=values.map((v,i)=>[p.l+i*step,p.t+(h-p.t-p.b)*(1-v/top)]);
+    const grad=ctx.createLinearGradient(0,p.t,0,h-p.b);grad.addColorStop(0,'rgba(16,185,129,.30)');grad.addColorStop(1,'rgba(16,185,129,.02)');
+    ctx.beginPath();ctx.moveTo(points[0][0],h-p.b);points.forEach(pt=>ctx.lineTo(pt[0],pt[1]));ctx.lineTo(points.at(-1)[0],h-p.b);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+    ctx.beginPath();points.forEach((pt,i)=>i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]));ctx.strokeStyle='#059669';ctx.lineWidth=3;ctx.lineJoin='round';ctx.stroke();
+    points.forEach((pt,i)=>{ctx.beginPath();ctx.arc(pt[0],pt[1],3.5,0,Math.PI*2);ctx.fillStyle='#059669';ctx.fill();if(i===0||i===points.length-1||i%Math.ceil(points.length/8)===0){ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');ctx.textAlign='center';ctx.fillText(labels[i],pt[0],h-15)}});
+  }
+  const payments={{ payment_breakdown|tojson }}; const payCanvas=document.getElementById('paymentChart'),legend=document.getElementById('paymentLegend');
+  function drawPayments(){if(!payCanvas)return;const ctx=payCanvas.getContext('2d'),total=payments.reduce((s,x)=>s+x.value,0),colors=['#059669','#2563eb','#8b5cf6','#f59e0b','#ef4444','#06b6d4'];let angle=-Math.PI/2;ctx.clearRect(0,0,190,190);payments.forEach((x,i)=>{const slice=total?x.value/total*Math.PI*2:0;ctx.beginPath();ctx.arc(95,95,78,angle,angle+slice);ctx.arc(95,95,45,angle+slice,angle,true);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();angle+=slice});ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');ctx.font='bold 15px Arial';ctx.textAlign='center';ctx.fillText(total.toLocaleString('en-US',{maximumFractionDigits:0}),95,92);ctx.font='11px Arial';ctx.fillText(currency,95,110);legend.innerHTML=payments.map((x,i)=>`<div><i style="background:${colors[i%colors.length]}"></i><span>${x.name}</span><strong>${total?(x.value/total*100).toFixed(1):0}%</strong><small>${x.value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</small></div>`).join('')||'<p class="empty-note">لا توجد بيانات.</p>'}
+  drawRevenueChart();drawPayments();window.addEventListener('resize',()=>{clearTimeout(window.__dashResize);window.__dashResize=setTimeout(drawRevenueChart,120)});
+});
+</script>
 {% endblock %}
