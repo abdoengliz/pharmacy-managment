@@ -700,3 +700,7 @@ body.mobile-quick-open,body.app-focus-mode.app-menu-open{
   .badge,.status-badge{font-size:.92rem!important;font-weight:800}
   table{font-size:1rem!important}
 }
+
+/* Dashboard section order v6.5.5 */
+.dashboard-quick-actions{margin:0 0 18px}
+.page-dashboard .attention-panel{margin:0 0 16px}

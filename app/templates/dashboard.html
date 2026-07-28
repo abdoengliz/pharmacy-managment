@@ -61,6 +61,40 @@
   <strong class="analytics-period-label">{{ period_label }}</strong>
 </form>
 
+<div class="manager-work-grid">
+  <section class="panel manager-tasks-panel">
+    <div class="panel-head"><div><h2>📋 مهام مدير الفرع</h2><span>{{ task_summary.open }} مفتوحة · {{ task_summary.high }} عاجلة · {{ task_summary.overdue }} متأخرة</span></div><a class="text-link" href="{{ url_for('tasks_page') }}">عرض الكل</a></div>
+    <form class="manager-task-form" method="post" action="{{ url_for('dashboard_add_task') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input name="title" required maxlength="160" placeholder="اكتب مهمة جديدة...">
+      <select name="priority"><option value="NORMAL">متوسطة</option><option value="HIGH">عالية</option><option value="LOW">منخفضة</option></select>
+      <input type="date" name="due_date" value="{{ dashboard_today }}">
+      <input type="time" name="due_time">
+      <button class="btn primary" type="submit">+ إضافة</button>
+      <textarea name="description" rows="2" placeholder="وصف مختصر (اختياري)"></textarea>
+    </form>
+    <div class="manager-task-list">
+      {% for task in manager_tasks %}
+      <article class="manager-task-item {{ 'overdue' if task.due_at and task.due_at[:10] < dashboard_today else '' }}">
+        <form method="post" action="{{ url_for('dashboard_toggle_task', task_id=task.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="task-check" title="إنجاز المهمة">○</button></form>
+        <div class="task-body"><div><strong>{{ task.title }}</strong><span class="priority {{ task.priority|lower }}">{{ 'عالية' if task.priority=='HIGH' else 'منخفضة' if task.priority=='LOW' else 'متوسطة' }}</span>{% if task.task_type!='MANUAL' %}<span class="auto-task">🤖 تلقائية</span>{% endif %}</div><p>{{ task.description or '' }}</p><small>{% if task.due_at %}⏰ {{ task.due_at }}{% else %}بدون موعد{% endif %}{% if task.location_name %} · {{ task.location_name }}{% endif %}</small></div>
+        {% if task.action_url %}<a class="task-open-link" href="{{ task.action_url }}">فتح</a>{% endif %}
+        {% if task.task_type=='MANUAL' %}<form method="post" action="{{ url_for('dashboard_delete_task', task_id=task.id) }}" onsubmit="return confirm('حذف المهمة؟')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="icon-danger" title="حذف">×</button></form>{% endif %}
+      </article>
+      {% else %}<p class="empty-note">ممتاز، لا توجد مهام مفتوحة حاليًا.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="panel quick-notes-panel">
+    <div class="panel-head"><div><h2>⭐ الملاحظات السريعة</h2><span>دفتر ملاحظات خاص بك داخل لوحة التحكم</span></div></div>
+    <form class="quick-note-add" method="post" action="{{ url_for('dashboard_add_note') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><textarea name="note_text" required rows="3" maxlength="1000" placeholder="اكتب ملاحظة سريعة..."></textarea><button class="btn primary" type="submit">حفظ الملاحظة</button></form>
+    <div class="sticky-notes-grid">
+      {% for note in quick_notes %}<article class="sticky-note"><form method="post" action="{{ url_for('dashboard_update_note', note_id=note.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><textarea name="note_text" rows="4">{{ note.note_text }}</textarea><div><small>{{ note.updated_at or note.created_at }}</small><button class="btn small" type="submit">تحديث</button></div></form><form method="post" action="{{ url_for('dashboard_delete_note', note_id=note.id) }}" onsubmit="return confirm('حذف الملاحظة؟')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="note-delete">×</button></form></article>{% else %}<p class="empty-note">لا توجد ملاحظات. اكتب أول ملاحظة الآن.</p>{% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="panel dashboard-panel dashboard-quick-actions"><div class="panel-head"><div><h2>⚡ إجراءات سريعة</h2><span>أكثر العمليات استخدامًا</span></div></div><div class="quick-action-grid">{% if has_permission('add_employees') %}<a href="{{ url_for('employees') }}">👤<span>الموظفون</span></a>{% endif %}{% if has_permission('add_revenue') %}<a href="{{ url_for('revenues') }}">💵<span>إضافة إيراد</span></a>{% endif %}{% if has_permission('add_expense') %}<a href="{{ url_for('expenses') }}">💸<span>إضافة مصروف</span></a>{% endif %}{% if has_permission('view_cashbox') %}<a href="{{ url_for('cashbox') }}">🏦<span>الخزينة</span></a>{% endif %}{% if has_permission('view_reports') %}<a href="{{ url_for('reports') }}">📊<span>تقرير اليوم</span></a>{% endif %}<a href="{{ url_for('attendance_portal') }}">🕒<span>بوابة الحضور</span></a></div></section>
+
 <section class="analytics-kpi-grid">
   {% set kpis = [
     ('إجمالي الإيرادات', revenue_total, analytics_changes.revenue, 'income', '💵'),
@@ -114,42 +148,9 @@
   {% if has_permission('view_approvals') %}<a class="manager-stat" href="{{ url_for('approvals_center') }}"><span>✅</span><div><small>اعتمادات معلقة</small><strong>{{ pending_approvals }}</strong></div></a>{% endif %}
 </section>
 
-<div class="manager-work-grid">
-  <section class="panel manager-tasks-panel">
-    <div class="panel-head"><div><h2>📋 مهام مدير الفرع</h2><span>{{ task_summary.open }} مفتوحة · {{ task_summary.high }} عاجلة · {{ task_summary.overdue }} متأخرة</span></div><a class="text-link" href="{{ url_for('tasks_page') }}">عرض الكل</a></div>
-    <form class="manager-task-form" method="post" action="{{ url_for('dashboard_add_task') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input name="title" required maxlength="160" placeholder="اكتب مهمة جديدة...">
-      <select name="priority"><option value="NORMAL">متوسطة</option><option value="HIGH">عالية</option><option value="LOW">منخفضة</option></select>
-      <input type="date" name="due_date" value="{{ dashboard_today }}">
-      <input type="time" name="due_time">
-      <button class="btn primary" type="submit">+ إضافة</button>
-      <textarea name="description" rows="2" placeholder="وصف مختصر (اختياري)"></textarea>
-    </form>
-    <div class="manager-task-list">
-      {% for task in manager_tasks %}
-      <article class="manager-task-item {{ 'overdue' if task.due_at and task.due_at[:10] < dashboard_today else '' }}">
-        <form method="post" action="{{ url_for('dashboard_toggle_task', task_id=task.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="task-check" title="إنجاز المهمة">○</button></form>
-        <div class="task-body"><div><strong>{{ task.title }}</strong><span class="priority {{ task.priority|lower }}">{{ 'عالية' if task.priority=='HIGH' else 'منخفضة' if task.priority=='LOW' else 'متوسطة' }}</span>{% if task.task_type!='MANUAL' %}<span class="auto-task">🤖 تلقائية</span>{% endif %}</div><p>{{ task.description or '' }}</p><small>{% if task.due_at %}⏰ {{ task.due_at }}{% else %}بدون موعد{% endif %}{% if task.location_name %} · {{ task.location_name }}{% endif %}</small></div>
-        {% if task.action_url %}<a class="task-open-link" href="{{ task.action_url }}">فتح</a>{% endif %}
-        {% if task.task_type=='MANUAL' %}<form method="post" action="{{ url_for('dashboard_delete_task', task_id=task.id) }}" onsubmit="return confirm('حذف المهمة؟')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="icon-danger" title="حذف">×</button></form>{% endif %}
-      </article>
-      {% else %}<p class="empty-note">ممتاز، لا توجد مهام مفتوحة حاليًا.</p>{% endfor %}
-    </div>
-  </section>
 
-  <section class="panel quick-notes-panel">
-    <div class="panel-head"><div><h2>⭐ الملاحظات السريعة</h2><span>دفتر ملاحظات خاص بك داخل لوحة التحكم</span></div></div>
-    <form class="quick-note-add" method="post" action="{{ url_for('dashboard_add_note') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><textarea name="note_text" required rows="3" maxlength="1000" placeholder="اكتب ملاحظة سريعة..."></textarea><button class="btn primary" type="submit">حفظ الملاحظة</button></form>
-    <div class="sticky-notes-grid">
-      {% for note in quick_notes %}<article class="sticky-note"><form method="post" action="{{ url_for('dashboard_update_note', note_id=note.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><textarea name="note_text" rows="4">{{ note.note_text }}</textarea><div><small>{{ note.updated_at or note.created_at }}</small><button class="btn small" type="submit">تحديث</button></div></form><form method="post" action="{{ url_for('dashboard_delete_note', note_id=note.id) }}" onsubmit="return confirm('حذف الملاحظة؟')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="note-delete">×</button></form></article>{% else %}<p class="empty-note">لا توجد ملاحظات. اكتب أول ملاحظة الآن.</p>{% endfor %}
-    </div>
-  </section>
-</div>
 
-<div class="dashboard-pro-grid">
-  <section class="panel dashboard-panel attention-panel"><div class="panel-head"><div><h2>🔔 ما يحتاج انتباهك</h2><span>التنبيهات والاعتمادات</span></div></div><div class="attention-list"><a href="{{ url_for('tasks_page') }}"><span>☑ مهام مفتوحة</span><b>{{ dashboard_open_tasks }}</b></a>{% if has_permission('view_approvals') %}<a href="{{ url_for('approvals_center') }}"><span>✓ اعتمادات معلقة</span><b>{{ pending_approvals }}</b></a>{% endif %}<a href="{{ url_for('notifications_page') }}"><span>🔔 إشعارات غير مقروءة</span><b>{{ unread_notification_count }}</b></a></div><div class="mini-notifications">{% for item in recent_notifications %}<a href="{{ url_for('open_notification', notification_id=item.id) }}"><strong>{{ item.title }}</strong><small>{{ item.created_at }}</small></a>{% else %}<p class="empty-note">لا توجد إشعارات حديثة.</p>{% endfor %}</div></section>
-  <section class="panel dashboard-panel"><div class="panel-head"><div><h2>⚡ إجراءات سريعة</h2><span>أكثر العمليات استخدامًا</span></div></div><div class="quick-action-grid">{% if has_permission('add_employees') %}<a href="{{ url_for('employees') }}">👤<span>الموظفون</span></a>{% endif %}{% if has_permission('add_revenue') %}<a href="{{ url_for('revenues') }}">💵<span>إضافة إيراد</span></a>{% endif %}{% if has_permission('add_expense') %}<a href="{{ url_for('expenses') }}">💸<span>إضافة مصروف</span></a>{% endif %}{% if has_permission('view_cashbox') %}<a href="{{ url_for('cashbox') }}">🏦<span>الخزينة</span></a>{% endif %}{% if has_permission('view_reports') %}<a href="{{ url_for('reports') }}">📊<span>تقرير اليوم</span></a>{% endif %}<a href="{{ url_for('attendance_portal') }}">🕒<span>بوابة الحضور</span></a></div></section>
-</div>
+<section class="panel dashboard-panel attention-panel"><div class="panel-head"><div><h2>🔔 ما يحتاج انتباهك</h2><span>التنبيهات والاعتمادات</span></div></div><div class="attention-list"><a href="{{ url_for('tasks_page') }}"><span>☑ مهام مفتوحة</span><b>{{ dashboard_open_tasks }}</b></a>{% if has_permission('view_approvals') %}<a href="{{ url_for('approvals_center') }}"><span>✓ اعتمادات معلقة</span><b>{{ pending_approvals }}</b></a>{% endif %}<a href="{{ url_for('notifications_page') }}"><span>🔔 إشعارات غير مقروءة</span><b>{{ unread_notification_count }}</b></a></div><div class="mini-notifications">{% for item in recent_notifications %}<a href="{{ url_for('open_notification', notification_id=item.id) }}"><strong>{{ item.title }}</strong><small>{{ item.created_at }}</small></a>{% else %}<p class="empty-note">لا توجد إشعارات حديثة.</p>{% endfor %}</div></section>
 
 {% if has_permission('view_audit') %}<section class="panel dashboard-panel activity-panel"><div class="panel-head"><div><h2>🕒 آخر العمليات</h2><span>أحدث الأنشطة داخل المنظومة</span></div><a class="text-link" href="{{ url_for('audit_page') }}">عرض الكل</a></div><div class="audit-timeline">{% for row in recent %}<div class="audit-item"><span class="audit-dot"></span><div><strong>{{ row.action }}</strong><p>{{ row.details or 'بدون تفاصيل إضافية' }}</p><small>{{ row.user_name }} — {{ row.created_at }}</small></div></div>{% else %}<p class="empty-note">لا توجد عمليات مسجلة.</p>{% endfor %}</div></section>{% endif %}
 {% endblock %}
