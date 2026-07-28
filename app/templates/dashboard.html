@@ -101,9 +101,33 @@
   </aside>
 </section>
 
-<section class="analytics-detail-grid">
-  <article class="panel payment-breakdown-panel"><div class="panel-head"><div><h2>◉ توزيع الإيرادات حسب طريقة الدفع</h2><span>نسبة كل قناة من إجمالي الإيرادات</span></div></div><div class="payment-breakdown-body"><canvas id="paymentChart" width="190" height="190"></canvas><div class="payment-legend" id="paymentLegend"></div></div></article>
-  <article class="panel top-products-panel"><div class="panel-head"><div><h2>🏆 أفضل المنتجات مبيعًا</h2><span>حسب قيمة المبيعات في الفترة</span></div></div><div class="compact-table"><div class="compact-row head"><span>المنتج</span><span>الكمية</span><span>الإيراد</span></div>{% for item in top_products %}<div class="compact-row"><strong>{{ item.item_name }}</strong><span>{{ '%.2f'|format(item.quantity) }}</span><span>{{ '%.2f'|format(item.total) }}</span></div>{% else %}<p class="empty-note">لا توجد مبيعات منتجات في الفترة.</p>{% endfor %}</div></article>
+<section class="analytics-detail-grid employee-analytics-grid">
+  <article class="panel employee-performance-panel">
+    <div class="panel-head employee-performance-head">
+      <div><h2>👥 أداء الموظفين خلال الفترة</h2><span>الإيرادات والفواتير ونسبة مساهمة كل موظف</span></div>
+      {% if employee_performance %}<span class="employee-count-badge">{{ employee_performance|length }} موظف</span>{% endif %}
+    </div>
+    <div class="employee-performance-table-wrap">
+      <table class="employee-performance-table">
+        <thead><tr><th>#</th><th>الموظف</th><th>عدد الفواتير</th><th>إجمالي الإيراد</th><th>متوسط الفاتورة</th><th>المتوسط اليومي</th><th>نسبة المساهمة</th></tr></thead>
+        <tbody>
+          {% for item in employee_performance %}
+          <tr class="{{ 'top-performer' if loop.first else '' }}">
+            <td><span class="employee-rank rank-{{ item.rank if item.rank <= 3 else 'other' }}">{{ '🏆' if loop.first else item.rank }}</span></td>
+            <td><strong>{{ item.full_name }}</strong>{% if loop.first %}<small class="top-performer-label">الأعلى إيرادًا</small>{% endif %}</td>
+            <td>{{ item.invoice_count }}</td>
+            <td><strong>{{ '%.2f'|format(item.total_revenue) }}</strong> <small>{{ app_settings.get('currency','د.ل') }}</small></td>
+            <td>{{ '%.2f'|format(item.average_invoice) }}</td>
+            <td>{{ '%.2f'|format(item.daily_average) }}</td>
+            <td class="contribution-cell"><div><strong>{{ '%.1f'|format(item.contribution) }}%</strong><span class="contribution-track"><i style="width:{{ [item.contribution,100]|min }}%"></i></span></div></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7"><p class="empty-note">لا توجد بيانات موزعة على الموظفين خلال الفترة المحددة.</p></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
   <article class="panel period-comparison-panel"><div class="panel-head"><div><h2>↗ مقارنة الفترة السابقة</h2><span>قراءة سريعة لأهم المؤشرات</span></div></div>{% for label,current,previous,change in [('الإيرادات',revenue_total,previous_revenue,analytics_changes.revenue),('المصروفات',expense_total,previous_expense,analytics_changes.expense),('سدادات الموردين',payment_total,previous_payments,analytics_changes.payments),('الصافي',net_total,previous_net,analytics_changes.net)] %}<div class="comparison-row"><div><strong>{{ label }}</strong><small>{{ '%.2f'|format(current) }} مقابل {{ '%.2f'|format(previous) }}</small></div><span class="{{ 'positive' if change is not none and change >= 0 else 'negative' }}">{% if change is none %}—{% else %}{{ '▲' if change >= 0 else '▼' }} {{ change|abs }}%{% endif %}</span></div>{% endfor %}</article>
 </section>
 
@@ -150,9 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.beginPath();points.forEach((pt,i)=>i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]));ctx.strokeStyle='#059669';ctx.lineWidth=3;ctx.lineJoin='round';ctx.stroke();
     points.forEach((pt,i)=>{ctx.beginPath();ctx.arc(pt[0],pt[1],3.5,0,Math.PI*2);ctx.fillStyle='#059669';ctx.fill();if(i===0||i===points.length-1||i%Math.ceil(points.length/8)===0){ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');ctx.textAlign='center';ctx.fillText(labels[i],pt[0],h-15)}});
   }
-  const payments={{ payment_breakdown|tojson }}; const payCanvas=document.getElementById('paymentChart'),legend=document.getElementById('paymentLegend');
-  function drawPayments(){if(!payCanvas)return;const ctx=payCanvas.getContext('2d'),total=payments.reduce((s,x)=>s+x.value,0),colors=['#059669','#2563eb','#8b5cf6','#f59e0b','#ef4444','#06b6d4'];let angle=-Math.PI/2;ctx.clearRect(0,0,190,190);payments.forEach((x,i)=>{const slice=total?x.value/total*Math.PI*2:0;ctx.beginPath();ctx.arc(95,95,78,angle,angle+slice);ctx.arc(95,95,45,angle+slice,angle,true);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();angle+=slice});ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--text');ctx.font='bold 15px Arial';ctx.textAlign='center';ctx.fillText(total.toLocaleString('en-US',{maximumFractionDigits:0}),95,92);ctx.font='11px Arial';ctx.fillText(currency,95,110);legend.innerHTML=payments.map((x,i)=>`<div><i style="background:${colors[i%colors.length]}"></i><span>${x.name}</span><strong>${total?(x.value/total*100).toFixed(1):0}%</strong><small>${x.value.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</small></div>`).join('')||'<p class="empty-note">لا توجد بيانات.</p>'}
-  drawRevenueChart();drawPayments();window.addEventListener('resize',()=>{clearTimeout(window.__dashResize);window.__dashResize=setTimeout(drawRevenueChart,120)});
+  drawRevenueChart();window.addEventListener('resize',()=>{clearTimeout(window.__dashResize);window.__dashResize=setTimeout(drawRevenueChart,120)});
 });
 </script>
 {% endblock %}

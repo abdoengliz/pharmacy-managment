@@ -452,20 +452,15 @@ def dashboard() -> Any:
     }
 
     date_params = [start_iso, end_iso] + branch_params
-    # Daily chart and payment-method breakdown share the same date/branch filter.
-    # UNION ALL returns both datasets in one PostgreSQL network round trip.
     revenue_chart_rows = db.execute(
-        "SELECT 'DAY' row_type, CAST(revenue_date AS TEXT) row_key, COALESCE(SUM(amount),0) total "
+        "SELECT CAST(revenue_date AS TEXT) row_key, COALESCE(SUM(amount),0) total "
         "FROM revenues WHERE revenue_date BETWEEN ? AND ?" + branch_clause +
-        " GROUP BY revenue_date UNION ALL "
-        "SELECT 'METHOD' row_type, COALESCE(payment_method,'') row_key, COALESCE(SUM(amount),0) total "
-        "FROM revenues WHERE revenue_date BETWEEN ? AND ?" + branch_clause +
-        " GROUP BY payment_method",
-        date_params + date_params,
+        " GROUP BY revenue_date ORDER BY revenue_date",
+        date_params,
     ).fetchall()
     daily_map = {
         str(row["row_key"])[:10]: float(row["total"] or 0)
-        for row in revenue_chart_rows if row["row_type"] == "DAY"
+        for row in revenue_chart_rows
     }
     chart_labels: list[str] = []
     chart_values: list[float] = []
@@ -476,44 +471,50 @@ def dashboard() -> Any:
         chart_values.append(round(daily_map.get(iso_day, 0), 2))
         cursor_day += timedelta(days=1)
 
-    payment_method_names = {"CASH": "نقدي", "CARD": "بطاقة", "BANK": "تحويل مصرفي", "CREDIT": "آجل", "POS": "شبكة"}
-    payment_breakdown = sorted(
-        [
-            {"name": payment_method_names.get(str(row["row_key"]).upper(), str(row["row_key"])), "value": float(row["total"] or 0)}
-            for row in revenue_chart_rows if row["row_type"] == "METHOD"
-        ],
-        key=lambda item: item["value"],
-        reverse=True,
-    )
-
     sales_analytics_clause = ""
     sales_analytics_params: list[Any] = [start_iso, end_iso]
     if selected_branch_id:
         sales_analytics_clause = " AND s.branch_id=?"
         sales_analytics_params.append(selected_branch_id)
-    # Combine period sales summary and top products into one result set.
-    sales_analytics_rows = db.execute(
-        "WITH period_sales AS ("
-        " SELECT COUNT(*) invoices,COALESCE(SUM(total_amount),0) total FROM sales_invoices s"
-        " WHERE s.invoice_date BETWEEN ? AND ? AND s.status IN ('APPROVED','POSTED')" + sales_analytics_clause +
-        "), top_items AS ("
-        " SELECT i.item_name,COALESCE(SUM(i.quantity),0) quantity,COALESCE(SUM(i.line_total),0) item_total"
-        " FROM sales_invoice_items i JOIN sales_invoices s ON s.id=i.invoice_id"
-        " WHERE s.invoice_date BETWEEN ? AND ? AND s.status IN ('APPROVED','POSTED')" + sales_analytics_clause +
-        " GROUP BY i.item_name ORDER BY item_total DESC LIMIT 5"
-        ") SELECT p.invoices,p.total,t.item_name,t.quantity,t.item_total FROM period_sales p LEFT JOIN top_items t ON 1=1",
-        sales_analytics_params + sales_analytics_params,
+    sales_period_row = db.execute(
+        "SELECT COUNT(*) invoices,COALESCE(SUM(total_amount),0) total FROM sales_invoices s "
+        "WHERE s.invoice_date BETWEEN ? AND ? AND s.status IN ('APPROVED','POSTED')" + sales_analytics_clause,
+        sales_analytics_params,
+    ).fetchone()
+    sales_period = {
+        "invoices": int(sales_period_row["invoices"] or 0) if sales_period_row else 0,
+        "total": float(sales_period_row["total"] or 0) if sales_period_row else 0.0,
+    }
+
+    employee_clause = ""
+    employee_params: list[Any] = [start_iso, end_iso]
+    if selected_branch_id:
+        employee_clause = " AND r.branch_id=?"
+        employee_params.append(selected_branch_id)
+    employee_rows = db.execute(
+        "SELECT e.id,e.full_name,COALESCE(SUM(res.amount),0) total_revenue,"
+        "COALESCE(SUM(res.invoice_count),0) invoice_count "
+        "FROM revenue_employee_splits res "
+        "JOIN revenues r ON r.id=res.revenue_id "
+        "JOIN employees e ON e.id=res.employee_id "
+        "WHERE r.revenue_date BETWEEN ? AND ?" + employee_clause +
+        " GROUP BY e.id,e.full_name ORDER BY total_revenue DESC,e.full_name",
+        employee_params,
     ).fetchall()
-    if sales_analytics_rows:
-        first_sales = sales_analytics_rows[0]
-        sales_period = {"invoices": first_sales["invoices"], "total": first_sales["total"]}
-        top_products = [
-            {"item_name": row["item_name"], "quantity": row["quantity"], "total": row["item_total"]}
-            for row in sales_analytics_rows if row["item_name"] is not None
-        ]
-    else:
-        sales_period = {"invoices": 0, "total": 0}
-        top_products = []
+    employee_performance = []
+    for rank, row in enumerate(employee_rows, start=1):
+        employee_total = float(row["total_revenue"] or 0)
+        employee_invoices = int(row["invoice_count"] or 0)
+        employee_performance.append({
+            "rank": rank,
+            "employee_id": int(row["id"]),
+            "full_name": row["full_name"],
+            "invoice_count": employee_invoices,
+            "total_revenue": employee_total,
+            "average_invoice": employee_total / employee_invoices if employee_invoices else 0.0,
+            "daily_average": employee_total / range_days,
+            "contribution": (employee_total / revenue_total * 100) if revenue_total > 0 else 0.0,
+        })
 
     revenue_average = revenue_total / range_days
     best_day = max(zip(chart_values, chart_labels), default=(0, "—"))
@@ -567,9 +568,8 @@ def dashboard() -> Any:
         "previous_net": previous_net,
         "chart_labels": chart_labels,
         "chart_values": chart_values,
-        "payment_breakdown": payment_breakdown,
         "sales_period": sales_period,
-        "top_products": top_products,
+        "employee_performance": employee_performance,
         "revenue_average": revenue_average,
         "best_revenue_day": {"value": best_day[0], "label": best_day[1]},
         "dashboard_cache_hit": False,
