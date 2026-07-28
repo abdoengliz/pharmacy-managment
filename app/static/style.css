@@ -730,3 +730,37 @@ body.mobile-quick-open,body.app-focus-mode.app-menu-open{
 .contribution-track i{display:block;height:100%;border-radius:inherit;background:#059669}
 @media(max-width:1000px){.employee-analytics-grid{grid-template-columns:1fr}.employee-performance-panel,.period-comparison-panel{grid-column:auto}}
 @media(max-width:620px){.employee-performance-head{align-items:flex-start}.employee-count-badge{margin-top:3px}.employee-performance-table th,.employee-performance-table td{padding:10px 8px;font-size:.78rem}}
+
+/* Employee performance layout completeness fix v6.5.8 */
+.page-dashboard .analytics-detail-grid.employee-analytics-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:16px;
+}
+.page-dashboard .employee-analytics-grid .employee-performance-panel,
+.page-dashboard .employee-analytics-grid .period-comparison-panel{
+  grid-column:1/-1!important;
+  width:100%;
+  min-width:0;
+}
+.page-dashboard .employee-performance-table-wrap{
+  width:100%;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.page-dashboard .employee-performance-table{
+  width:100%;
+  min-width:980px;
+  table-layout:auto;
+}
+.page-dashboard .employee-performance-table th,
+.page-dashboard .employee-performance-table td{
+  padding:13px 12px;
+}
+.page-dashboard .employee-performance-table th:nth-child(2),
+.page-dashboard .employee-performance-table td:nth-child(2){
+  min-width:180px;
+}
+@media(max-width:1000px){
+  .page-dashboard .employee-performance-table{min-width:900px}
+}
