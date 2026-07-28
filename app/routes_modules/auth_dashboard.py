@@ -501,20 +501,95 @@ def dashboard() -> Any:
         " GROUP BY e.id,e.full_name ORDER BY total_revenue DESC,e.full_name",
         employee_params,
     ).fetchall()
+    previous_employee_params: list[Any] = [previous_start_iso, previous_end_iso]
+    if selected_branch_id:
+        previous_employee_params.append(selected_branch_id)
+    previous_employee_rows = db.execute(
+        "SELECT res.employee_id,COALESCE(SUM(res.amount),0) total_revenue "
+        "FROM revenue_employee_splits res "
+        "JOIN revenues r ON r.id=res.revenue_id "
+        "WHERE r.revenue_date BETWEEN ? AND ?" + employee_clause +
+        " GROUP BY res.employee_id",
+        previous_employee_params,
+    ).fetchall()
+    previous_employee_totals = {
+        int(row["employee_id"]): float(row["total_revenue"] or 0)
+        for row in previous_employee_rows
+    }
+
+    employee_daily_rows = db.execute(
+        "SELECT res.employee_id,CAST(r.revenue_date AS TEXT) revenue_day,"
+        "COALESCE(SUM(res.amount),0) total_revenue "
+        "FROM revenue_employee_splits res "
+        "JOIN revenues r ON r.id=res.revenue_id "
+        "WHERE r.revenue_date BETWEEN ? AND ?" + employee_clause +
+        " GROUP BY res.employee_id,r.revenue_date ORDER BY r.revenue_date",
+        employee_params,
+    ).fetchall()
+    employee_daily_map: dict[int, dict[str, float]] = {}
+    for row in employee_daily_rows:
+        employee_id = int(row["employee_id"])
+        employee_daily_map.setdefault(employee_id, {})[str(row["revenue_day"])[:10]] = float(row["total_revenue"] or 0)
+
     employee_performance = []
+    employee_revenue_analysis: dict[str, Any] = {
+        "labels": chart_labels,
+        "dates": [],
+        "employees": {},
+        "currency": "د.ل",
+    }
+    cursor_day = start_date
+    while cursor_day <= end_date:
+        employee_revenue_analysis["dates"].append(cursor_day.isoformat())
+        cursor_day += timedelta(days=1)
+
+    team_employee_count = max(1, len(employee_rows))
     for rank, row in enumerate(employee_rows, start=1):
+        employee_id = int(row["id"])
         employee_total = float(row["total_revenue"] or 0)
         employee_invoices = int(row["invoice_count"] or 0)
-        employee_performance.append({
+        previous_employee_total = previous_employee_totals.get(employee_id, 0.0)
+        employee_change = percent_change(employee_total, previous_employee_total)
+        daily_values = [
+            round(employee_daily_map.get(employee_id, {}).get(day_iso, 0.0), 2)
+            for day_iso in employee_revenue_analysis["dates"]
+        ]
+        non_zero_days = [(value, chart_labels[index]) for index, value in enumerate(daily_values) if value > 0]
+        best_employee_day = max(non_zero_days, default=(0.0, "—"))
+        lowest_employee_day = min(non_zero_days, default=(0.0, "—"))
+        team_average_total = revenue_total / team_employee_count
+        difference_from_team = percent_change(employee_total, team_average_total)
+        if difference_from_team is not None and difference_from_team >= 15:
+            performance_status = "ممتاز"
+            performance_tone = "excellent"
+        elif difference_from_team is not None and difference_from_team >= -10:
+            performance_status = "جيد"
+            performance_tone = "good"
+        else:
+            performance_status = "يحتاج تحسين"
+            performance_tone = "needs-improvement"
+        item = {
             "rank": rank,
-            "employee_id": int(row["id"]),
+            "employee_id": employee_id,
             "full_name": row["full_name"],
             "invoice_count": employee_invoices,
             "total_revenue": employee_total,
             "average_invoice": employee_total / employee_invoices if employee_invoices else 0.0,
             "daily_average": employee_total / range_days,
             "contribution": (employee_total / revenue_total * 100) if revenue_total > 0 else 0.0,
-        })
+            "previous_total": previous_employee_total,
+            "period_change": employee_change,
+            "difference_from_team": difference_from_team,
+            "performance_status": performance_status,
+            "performance_tone": performance_tone,
+            "best_day": {"value": best_employee_day[0], "label": best_employee_day[1]},
+            "lowest_day": {"value": lowest_employee_day[0], "label": lowest_employee_day[1]},
+        }
+        employee_performance.append(item)
+        employee_revenue_analysis["employees"][str(employee_id)] = {
+            **item,
+            "daily_values": daily_values,
+        }
 
     revenue_average = revenue_total / range_days
     best_day = max(zip(chart_values, chart_labels), default=(0, "—"))
@@ -570,6 +645,7 @@ def dashboard() -> Any:
         "chart_values": chart_values,
         "sales_period": sales_period,
         "employee_performance": employee_performance,
+        "employee_revenue_analysis": employee_revenue_analysis,
         "revenue_average": revenue_average,
         "best_revenue_day": {"value": best_day[0], "label": best_day[1]},
         "dashboard_cache_hit": False,

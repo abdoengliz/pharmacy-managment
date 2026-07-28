@@ -114,7 +114,7 @@
           {% for item in employee_performance %}
           <tr class="{{ 'top-performer' if loop.first else '' }}">
             <td><span class="employee-rank rank-{{ item.rank if item.rank <= 3 else 'other' }}">{{ '🏆' if loop.first else item.rank }}</span></td>
-            <td><strong>{{ item.full_name }}</strong>{% if loop.first %}<small class="top-performer-label">الأعلى إيرادًا</small>{% endif %}</td>
+            <td><button type="button" class="employee-analysis-trigger" data-employee-id="{{ item.employee_id }}"><strong>{{ item.full_name }}</strong><small>عرض حركة الإيراد والمقارنة</small></button>{% if loop.first %}<small class="top-performer-label">الأعلى إيرادًا</small>{% endif %}</td>
             <td>{{ item.invoice_count }}</td>
             <td><strong>{{ '%.2f'|format(item.total_revenue) }}</strong> <small>{{ app_settings.get('currency','د.ل') }}</small></td>
             <td>{{ '%.2f'|format(item.average_invoice) }}</td>
@@ -130,6 +130,36 @@
   </article>
   <article class="panel period-comparison-panel"><div class="panel-head"><div><h2>↗ مقارنة الفترة السابقة</h2><span>قراءة سريعة لأهم المؤشرات</span></div></div>{% for label,current,previous,change in [('الإيرادات',revenue_total,previous_revenue,analytics_changes.revenue),('المصروفات',expense_total,previous_expense,analytics_changes.expense),('سدادات الموردين',payment_total,previous_payments,analytics_changes.payments),('الصافي',net_total,previous_net,analytics_changes.net)] %}<div class="comparison-row"><div><strong>{{ label }}</strong><small>{{ '%.2f'|format(current) }} مقابل {{ '%.2f'|format(previous) }}</small></div><span class="{{ 'positive' if change is not none and change >= 0 else 'negative' }}">{% if change is none %}—{% else %}{{ '▲' if change >= 0 else '▼' }} {{ change|abs }}%{% endif %}</span></div>{% endfor %}</article>
 </section>
+
+<div class="employee-analysis-modal" id="employeeAnalysisModal" hidden>
+  <div class="employee-analysis-backdrop" data-close-employee-analysis></div>
+  <section class="employee-analysis-dialog" role="dialog" aria-modal="true" aria-labelledby="employeeAnalysisTitle">
+    <header class="employee-analysis-dialog-head">
+      <div><span class="analysis-kicker">تحليل أداء الموظف</span><h2 id="employeeAnalysisTitle">حركة الإيراد والمقارنة</h2><p id="employeeAnalysisSubtitle"></p></div>
+      <button type="button" class="employee-analysis-close" data-close-employee-analysis aria-label="إغلاق">×</button>
+    </header>
+    <div class="employee-analysis-body">
+      <div class="employee-analysis-toolbar">
+        <label>المقارنة مع
+          <select id="employeeComparisonMode">
+            <option value="team">متوسط باقي الموظفين</option>
+            <option value="best">أفضل موظف</option>
+          </select>
+        </label>
+        <span id="employeePerformanceBadge" class="employee-performance-badge"></span>
+      </div>
+      <div class="employee-analysis-stat-grid" id="employeeAnalysisStats"></div>
+      <div class="employee-chart-card">
+        <div class="employee-chart-legend"><span><i class="selected-line"></i><b id="selectedEmployeeLegend">الموظف</b></span><span><i class="comparison-line"></i><b id="comparisonLegend">متوسط الفريق</b></span></div>
+        <div class="employee-chart-wrap"><canvas id="employeeRevenueChart"></canvas><div class="employee-chart-empty" id="employeeChartEmpty">لا توجد حركة إيراد خلال الفترة.</div></div>
+      </div>
+      <div class="employee-ranking-card">
+        <div class="panel-head"><div><h3>🏆 ترتيب الموظفين</h3><span>حسب إجمالي الإيراد في الفترة المحددة</span></div></div>
+        <div class="employee-ranking-list" id="employeeRankingList"></div>
+      </div>
+    </div>
+  </section>
+</div>
 
 <div class="panel-head operations-heading"><div><h2>مؤشرات التشغيل اليومية</h2><span>الحضور والمهام والتنبيهات الحالية</span></div></div>
 <section class="manager-stat-grid">
@@ -175,6 +205,76 @@ document.addEventListener('DOMContentLoaded', () => {
     points.forEach((pt,i)=>{ctx.beginPath();ctx.arc(pt[0],pt[1],3.5,0,Math.PI*2);ctx.fillStyle='#059669';ctx.fill();if(i===0||i===points.length-1||i%Math.ceil(points.length/8)===0){ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');ctx.textAlign='center';ctx.fillText(labels[i],pt[0],h-15)}});
   }
   drawRevenueChart();window.addEventListener('resize',()=>{clearTimeout(window.__dashResize);window.__dashResize=setTimeout(drawRevenueChart,120)});
+
+  const employeeAnalysis = {{ employee_revenue_analysis|tojson }};
+  const employeeModal = document.getElementById('employeeAnalysisModal');
+  const employeeCanvas = document.getElementById('employeeRevenueChart');
+  const comparisonMode = document.getElementById('employeeComparisonMode');
+  let selectedEmployeeId = null;
+  const money = value => `${Number(value || 0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} ${currency}`;
+  const percentText = value => value === null || value === undefined ? '—' : `${value >= 0 ? '+' : ''}${Number(value).toFixed(1)}%`;
+
+  function comparisonSeries(employeeId, mode){
+    const entries = Object.entries(employeeAnalysis.employees || {});
+    if(!entries.length) return {name:'المقارنة', values:[]};
+    if(mode === 'best'){
+      const best = entries.reduce((a,b)=>Number(a[1].total_revenue)>=Number(b[1].total_revenue)?a:b);
+      return {name:`أفضل موظف: ${best[1].full_name}`, values:best[1].daily_values || []};
+    }
+    const others = entries.filter(([id])=>String(id)!==String(employeeId));
+    const size = others.length || 1;
+    const length = employeeAnalysis.labels.length;
+    return {name:'متوسط باقي الموظفين',values:Array.from({length},(_,index)=>others.reduce((sum,[,item])=>sum+Number((item.daily_values||[])[index]||0),0)/size)};
+  }
+
+  function drawEmployeeChart(){
+    if(!employeeCanvas || !selectedEmployeeId) return;
+    const item = employeeAnalysis.employees[String(selectedEmployeeId)];
+    if(!item) return;
+    const compare = comparisonSeries(selectedEmployeeId, comparisonMode.value);
+    document.getElementById('comparisonLegend').textContent = compare.name;
+    const primary = item.daily_values || [], secondary = compare.values || [];
+    const rect=employeeCanvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+    const displayWidth=Math.max(640,rect.width||640),displayHeight=320;
+    employeeCanvas.width=displayWidth*dpr;employeeCanvas.height=displayHeight*dpr;
+    const ctx=employeeCanvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,displayWidth,displayHeight);
+    const max=Math.max(...primary,...secondary,0), empty=document.getElementById('employeeChartEmpty');
+    empty.style.display=max<=0?'grid':'none'; if(max<=0) return;
+    const p={l:58,r:24,t:28,b:48},top=max*1.15,w=displayWidth,h=displayHeight;
+    ctx.font='12px Arial';ctx.textAlign='right';ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');
+    for(let i=0;i<=4;i++){const y=p.t+(h-p.t-p.b)*(i/4);ctx.strokeStyle='rgba(148,163,184,.22)';ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText(Math.round(top*(1-i/4)).toLocaleString('en-US'),p.l-8,y+4)}
+    const step=(w-p.l-p.r)/Math.max(1,primary.length-1);
+    const points=values=>values.map((v,i)=>[p.l+i*step,p.t+(h-p.t-p.b)*(1-Number(v||0)/top)]);
+    const drawLine=(pts,color,width,dashed=false)=>{ctx.beginPath();pts.forEach((pt,i)=>i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]));ctx.strokeStyle=color;ctx.lineWidth=width;ctx.setLineDash(dashed?[7,5]:[]);ctx.lineJoin='round';ctx.stroke();ctx.setLineDash([])};
+    drawLine(points(secondary),'#94a3b8',2,true);drawLine(points(primary),'#059669',3,false);
+    points(primary).forEach((pt,i)=>{ctx.beginPath();ctx.arc(pt[0],pt[1],3.4,0,Math.PI*2);ctx.fillStyle='#059669';ctx.fill();if(i===0||i===primary.length-1||i%Math.ceil(primary.length/7)===0){ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted');ctx.textAlign='center';ctx.fillText(employeeAnalysis.labels[i],pt[0],h-17)}});
+  }
+
+  function openEmployeeAnalysis(employeeId){
+    const item=employeeAnalysis.employees[String(employeeId)]; if(!item||!employeeModal) return;
+    selectedEmployeeId=String(employeeId);
+    document.getElementById('employeeAnalysisTitle').textContent=item.full_name;
+    document.getElementById('employeeAnalysisSubtitle').textContent=`الترتيب ${item.rank} من ${Object.keys(employeeAnalysis.employees).length} موظفين خلال {{ period_label }}`;
+    document.getElementById('selectedEmployeeLegend').textContent=item.full_name;
+    const badge=document.getElementById('employeePerformanceBadge');badge.textContent=item.performance_status;badge.className=`employee-performance-badge ${item.performance_tone}`;
+    const stats=[
+      ['إجمالي الإيراد',money(item.total_revenue)],['عدد الفواتير',Number(item.invoice_count).toLocaleString('en-US')],
+      ['متوسط الفاتورة',money(item.average_invoice)],['المتوسط اليومي',money(item.daily_average)],
+      ['نسبة المساهمة',`${Number(item.contribution).toFixed(1)}%`],['مقارنة بمتوسط الفريق',percentText(item.difference_from_team)],
+      ['أعلى يوم',`${item.best_day.label} · ${money(item.best_day.value)}`],['أقل يوم نشط',`${item.lowest_day.label} · ${money(item.lowest_day.value)}`],
+      ['الفترة السابقة',money(item.previous_total)],['التغير عن الفترة السابقة',percentText(item.period_change)]
+    ];
+    document.getElementById('employeeAnalysisStats').innerHTML=stats.map(([label,value])=>`<article><small>${label}</small><strong>${value}</strong></article>`).join('');
+    const ranking=Object.values(employeeAnalysis.employees).sort((a,b)=>Number(b.total_revenue)-Number(a.total_revenue));
+    document.getElementById('employeeRankingList').innerHTML=ranking.map(person=>`<div class="employee-ranking-row ${String(person.employee_id)===selectedEmployeeId?'selected':''}"><span class="employee-ranking-position">${person.rank<=3?['🥇','🥈','🥉'][person.rank-1]:person.rank}</span><strong>${person.full_name}</strong><span>${money(person.total_revenue)}</span><em>${Number(person.contribution).toFixed(1)}%</em></div>`).join('');
+    employeeModal.hidden=false;document.body.classList.add('modal-open');requestAnimationFrame(drawEmployeeChart);
+  }
+  function closeEmployeeAnalysis(){if(employeeModal){employeeModal.hidden=true;document.body.classList.remove('modal-open')}}
+  document.querySelectorAll('.employee-analysis-trigger').forEach(button=>button.addEventListener('click',()=>openEmployeeAnalysis(button.dataset.employeeId)));
+  document.querySelectorAll('[data-close-employee-analysis]').forEach(button=>button.addEventListener('click',closeEmployeeAnalysis));
+  comparisonMode?.addEventListener('change',drawEmployeeChart);
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!employeeModal?.hidden)closeEmployeeAnalysis()});
+  window.addEventListener('resize',()=>{if(employeeModal&&!employeeModal.hidden){clearTimeout(window.__employeeChartResize);window.__employeeChartResize=setTimeout(drawEmployeeChart,120)}});
 });
 </script>
 {% endblock %}

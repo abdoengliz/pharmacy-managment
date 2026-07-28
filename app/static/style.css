@@ -812,3 +812,64 @@ body.mobile-quick-open,body.app-focus-mode.app-menu-open{
     width:100%;
   }
 }
+
+
+/* v6.6.1 - Employee revenue movement and comparison */
+.employee-analysis-trigger{display:block;width:100%;border:0;background:transparent;padding:0;text-align:right;color:inherit;cursor:pointer;font:inherit}
+.employee-analysis-trigger strong{display:block;color:var(--text)}
+.employee-analysis-trigger small{display:block;margin-top:3px;color:var(--primary);font-size:.72rem;font-weight:800}
+.employee-analysis-trigger:hover strong{text-decoration:underline;text-underline-offset:3px}
+.employee-analysis-modal[hidden]{display:none!important}
+.employee-analysis-modal{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:22px}
+.employee-analysis-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.58);backdrop-filter:blur(4px)}
+.employee-analysis-dialog{position:relative;width:min(1120px,96vw);max-height:92vh;overflow:hidden;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 28px 80px rgba(15,23,42,.3);display:flex;flex-direction:column}
+.employee-analysis-dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px;border-bottom:1px solid var(--line);background:linear-gradient(135deg,rgba(5,150,105,.08),transparent 65%)}
+.employee-analysis-dialog-head h2{margin:3px 0 4px;font-size:1.45rem}
+.employee-analysis-dialog-head p{margin:0;color:var(--muted)}
+.analysis-kicker{display:inline-flex;padding:5px 10px;border-radius:999px;background:rgba(5,150,105,.12);color:var(--primary);font-size:.72rem;font-weight:900}
+.employee-analysis-close{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:1.75rem;line-height:1;cursor:pointer;color:var(--muted)}
+.employee-analysis-close:hover{color:var(--danger);border-color:rgba(220,38,38,.35)}
+.employee-analysis-body{padding:20px 24px 26px;overflow:auto;overscroll-behavior:contain}
+.employee-analysis-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px}
+.employee-analysis-toolbar label{display:flex;align-items:center;gap:9px;font-weight:800;color:var(--muted)}
+.employee-analysis-toolbar select{min-width:220px;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:11px;padding:9px 12px;font:inherit}
+.employee-performance-badge{padding:7px 13px;border-radius:999px;font-weight:900;font-size:.82rem}
+.employee-performance-badge.excellent{background:rgba(16,185,129,.14);color:#047857}
+.employee-performance-badge.good{background:rgba(245,158,11,.14);color:#b45309}
+.employee-performance-badge.needs-improvement{background:rgba(239,68,68,.13);color:#b91c1c}
+.employee-analysis-stat-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.employee-analysis-stat-grid article{padding:13px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.employee-analysis-stat-grid small{display:block;color:var(--muted);font-size:.72rem;font-weight:800;margin-bottom:7px}
+.employee-analysis-stat-grid strong{font-size:.94rem;line-height:1.4}
+.employee-chart-card,.employee-ranking-card{border:1px solid var(--line);border-radius:17px;background:var(--surface);padding:16px}
+.employee-chart-card{margin-bottom:16px}
+.employee-chart-legend{display:flex;flex-wrap:wrap;gap:18px;margin-bottom:10px;color:var(--muted);font-size:.78rem}
+.employee-chart-legend span{display:flex;align-items:center;gap:7px}
+.employee-chart-legend i{display:inline-block;width:28px;height:3px;border-radius:99px}
+.employee-chart-legend .selected-line{background:#059669}
+.employee-chart-legend .comparison-line{height:0;border-top:2px dashed #94a3b8}
+.employee-chart-wrap{position:relative;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
+.employee-chart-wrap canvas{display:block;width:100%;min-width:640px;height:320px}
+.employee-chart-empty{position:absolute;inset:0;display:none;place-items:center;color:var(--muted);font-weight:800;background:rgba(255,255,255,.65)}
+.employee-ranking-list{display:grid;gap:7px}
+.employee-ranking-row{display:grid;grid-template-columns:42px minmax(150px,1fr) minmax(130px,auto) 70px;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;background:var(--bg);border:1px solid transparent}
+.employee-ranking-row.selected{border-color:rgba(5,150,105,.35);background:rgba(5,150,105,.07)}
+.employee-ranking-row span,.employee-ranking-row em{white-space:nowrap}
+.employee-ranking-row em{font-style:normal;color:var(--primary);font-weight:900;text-align:left}
+.employee-ranking-position{text-align:center;font-weight:900}
+body.modal-open{overflow:hidden}
+@media(max-width:900px){
+  .employee-analysis-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .employee-analysis-dialog{width:min(96vw,900px);max-height:94vh}
+}
+@media(max-width:620px){
+  .employee-analysis-modal{padding:8px}
+  .employee-analysis-dialog{width:100%;max-height:97vh;border-radius:18px}
+  .employee-analysis-dialog-head,.employee-analysis-body{padding:16px}
+  .employee-analysis-toolbar{align-items:stretch;flex-direction:column}
+  .employee-analysis-toolbar label{justify-content:space-between}
+  .employee-analysis-toolbar select{min-width:0;flex:1}
+  .employee-analysis-stat-grid{grid-template-columns:1fr 1fr}
+  .employee-ranking-row{grid-template-columns:35px minmax(120px,1fr) auto}
+  .employee-ranking-row em{display:none}
+}
