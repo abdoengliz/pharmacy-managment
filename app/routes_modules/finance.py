@@ -288,13 +288,123 @@ def financial_accounts() -> Any:
     branches=db.execute("SELECT * FROM branches ORDER BY id").fetchall()
     return render_template("financial_accounts.html",rows=rows,branches=branches)
 
+def _financial_account_for_management(account_id: int):
+    """Return an account only when the current user is allowed to manage its branch."""
+    row = get_db().execute("SELECT * FROM financial_accounts WHERE id=?", (account_id,)).fetchone()
+    user = current_user()
+    if not row:
+        return None
+    if user["role"] != "admin" and user["branch_id"] and row["branch_id"] != user["branch_id"]:
+        return None
+    return row
+
+
+def _financial_account_usage(db, account_id: int) -> dict[str, int]:
+    """Count every direct financial reference that makes permanent deletion unsafe."""
+    checks = {
+        "financial_ledger": ("account_id",),
+        "revenues": ("account_id",),
+        "expenses": ("account_id",),
+        "supplier_payments": ("account_id",),
+        "external_debts": ("account_id",),
+        "external_debt_payments": ("account_id",),
+        "treasury_transfers": ("from_account_id", "to_account_id"),
+    }
+    usage: dict[str, int] = {}
+    for table, columns in checks.items():
+        clauses = " OR ".join(f"{column}=?" for column in columns)
+        params = tuple(account_id for _ in columns)
+        try:
+            count = int(db.execute(f"SELECT COUNT(*) AS c FROM {table} WHERE {clauses}", params).fetchone()["c"] or 0)
+        except Exception:
+            # Older installations may not have every optional table/column yet.
+            count = 0
+        if count:
+            usage[table] = count
+    return usage
+
+
+@app.post("/financial-accounts/<int:account_id>/edit")
+@login_required
+@permission_required("manage_financial_accounts")
+def edit_financial_account(account_id: int) -> Any:
+    db = get_db()
+    row = _financial_account_for_management(account_id)
+    if not row:
+        flash("الحساب المالي غير موجود أو لا تملك صلاحية تعديله.", "danger")
+        return redirect(url_for("financial_accounts"))
+
+    name = request.form.get("name", "").strip()
+    account_type = request.form.get("account_type", "").strip().upper()
+    notes = request.form.get("notes", "").strip()
+    valid_types = {"CASH", "BANK", "WALLET", "CARD"}
+    if not name:
+        flash("اسم الحساب مطلوب.", "danger")
+        return redirect(url_for("financial_accounts"))
+    if account_type not in valid_types:
+        flash("نوع الحساب غير صالح.", "danger")
+        return redirect(url_for("financial_accounts"))
+
+    try:
+        db.execute(
+            "UPDATE financial_accounts SET name=?, account_type=?, notes=? WHERE id=?",
+            (name, account_type, notes, account_id),
+        )
+        db.commit()
+        audit(
+            "تعديل حساب مالي",
+            f"{row['name']} ← {name}، النوع: {row['account_type']} ← {account_type}",
+        )
+        flash("تم تعديل الحساب المالي بنجاح.", "success")
+    except sqlite3.IntegrityError:
+        flash("يوجد حساب آخر بنفس الاسم في هذا الفرع.", "danger")
+    return redirect(url_for("financial_accounts"))
+
+
+@app.post("/financial-accounts/<int:account_id>/delete")
+@login_required
+@permission_required("manage_financial_accounts")
+def delete_financial_account(account_id: int) -> Any:
+    db = get_db()
+    row = _financial_account_for_management(account_id)
+    if not row:
+        flash("الحساب المالي غير موجود أو لا تملك صلاحية حذفه.", "danger")
+        return redirect(url_for("financial_accounts"))
+
+    balance_row = db.execute(
+        """SELECT COALESCE(SUM(CASE WHEN direction='IN' THEN amount ELSE -amount END),0) AS balance
+           FROM financial_ledger WHERE account_id=?""",
+        (account_id,),
+    ).fetchone()
+    balance = float(balance_row["balance"] or 0)
+    usage = _financial_account_usage(db, account_id)
+    if abs(balance) > 0.005 or usage:
+        flash(
+            "لا يمكن حذف هذا الحساب لأنه مرتبط برصيد أو حركات مالية. يمكنك إيقافه بدلًا من حذفه.",
+            "danger",
+        )
+        return redirect(url_for("financial_accounts"))
+
+    try:
+        db.execute("DELETE FROM financial_accounts WHERE id=?", (account_id,))
+        db.commit()
+        audit("حذف حساب مالي", f"{row['name']} — حساب جديد غير مستخدم")
+        flash("تم حذف الحساب المالي نهائيًا.", "success")
+    except sqlite3.IntegrityError:
+        db.rollback()
+        flash("لا يمكن حذف الحساب لأنه مرتبط ببيانات مالية أخرى.", "danger")
+    return redirect(url_for("financial_accounts"))
+
+
 @app.post("/financial-accounts/<int:account_id>/toggle")
 @login_required
 @permission_required("manage_financial_accounts")
 def toggle_financial_account(account_id:int)->Any:
-    db=get_db(); row=db.execute("SELECT * FROM financial_accounts WHERE id=?",(account_id,)).fetchone()
+    db=get_db(); row=_financial_account_for_management(account_id)
     if row:
         db.execute("UPDATE financial_accounts SET is_active=CASE is_active WHEN 1 THEN 0 ELSE 1 END WHERE id=?",(account_id,)); db.commit(); audit("تغيير حالة حساب مالي",row["name"]); flash("تم تحديث حالة الحساب.","success")
+    else:
+        flash("الحساب المالي غير موجود أو لا تملك صلاحية إدارته.","danger")
     return redirect(url_for("financial_accounts"))
 
 @app.route("/payments", methods=["GET", "POST"])
