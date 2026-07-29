@@ -6,6 +6,22 @@
   <div class="version-chip">الإصدار {{ app_settings.get('system_version', '5.8.0') }}</div>
 </div>
 
+<section class="mobile-dashboard-overview" aria-label="ملخص الفرع على الهاتف">
+  <div class="mobile-dashboard-status advisor-{{ manager_advisor.status.tone }}">
+    <div>
+      <span class="mobile-dashboard-status-icon">{{ manager_advisor.status.icon }}</span>
+      <div><small>حالة الفرع اليوم</small><strong>{{ manager_advisor.status.label }}</strong></div>
+    </div>
+    <button type="button" id="openManagerAdvisorMobile" aria-label="فتح مستشار مدير الفرع">التفاصيل ←</button>
+  </div>
+  <div class="mobile-dashboard-kpis">
+    <a href="{{ url_for('sales_invoices_page') if has_permission('view_sales') else url_for('revenues') }}"><span>💰</span><small>مبيعات اليوم</small><strong>{{ '%.2f'|format(branch_manager_stats.sales_total) }}</strong><em>{{ app_settings.get('currency','د.ل') }}</em></a>
+    <a href="{{ url_for('employees') }}"><span>👥</span><small>الموجودون الآن</small><strong>{{ branch_manager_stats.inside_now }}</strong><em>موظف</em></a>
+    <a href="{{ url_for('tasks_page') }}"><span>☑</span><small>المهام المفتوحة</small><strong>{{ dashboard_open_tasks }}</strong><em>مهمة</em></a>
+    <a href="{{ url_for('notifications_page') }}"><span>🔔</span><small>تنبيهات جديدة</small><strong>{{ unread_notification_count }}</strong><em>تنبيه</em></a>
+  </div>
+</section>
+
 <section class="mobile-command-center" aria-label="اختصارات الهاتف">
   {% if has_permission('view_sales') %}<a href="{{ url_for('sales_invoices_page') }}"><span>🛒</span><strong>المبيعات</strong><small>الفواتير والعملاء</small></a>{% endif %}
   {% if has_permission('view_inventory') %}<a href="{{ url_for('inventory') }}"><span>📦</span><strong>المخزون</strong><small>{{ branch_manager_stats.low_stock }} منخفض</small></a>{% endif %}
@@ -158,7 +174,7 @@
       {% if employee_performance %}<span class="employee-count-badge">{{ employee_performance|length }} موظف</span>{% endif %}
     </div>
     <div class="employee-performance-table-wrap">
-      <table class="employee-performance-table">
+      <table class="employee-performance-table mobile-card-table">
         <thead><tr><th>#</th><th>الموظف</th><th>عدد الفواتير</th><th>إجمالي الإيراد</th><th>متوسط الفاتورة</th><th>المتوسط اليومي</th><th>نسبة المساهمة</th></tr></thead>
         <tbody>
           {% for item in employee_performance %}
@@ -245,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.remove('modal-open');
   }
   document.getElementById('openManagerAdvisor')?.addEventListener('click', openManagerAdvisor);
+  document.getElementById('openManagerAdvisorMobile')?.addEventListener('click', openManagerAdvisor);
   document.querySelectorAll('[data-close-manager-advisor]').forEach(item=>item.addEventListener('click', closeManagerAdvisor));
   document.getElementById('reviewManagerAdvisor')?.addEventListener('click',()=>{
     try{ localStorage.setItem(advisorStorageKey, 'reviewed'); localStorage.removeItem(advisorSnoozeKey); }catch(_error){}

@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="صيدلي ERP">
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='6.5.3') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest', v='7.1.0') }}">
   <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='6.4.7') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='7.1.0') }}">
 </head>
 <body class="{% if current_user %}app-focus-mode{% endif %} page-{{ request.endpoint|default('unknown')|replace('_','-') }}">
 {% if current_user %}
@@ -176,6 +176,19 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape')setMobileQui
 const mobileMoreMenu=document.getElementById('mobileMoreMenu');
 if(mobileMoreMenu) mobileMoreMenu.addEventListener('click',()=>setAppMenu(true));
 // Progressive Web App: cache only public static assets; authenticated pages remain network-first.
+// v7.1: make responsive card tables self-describing on phones.
+function prepareMobileCardTables(){
+  document.querySelectorAll('table.mobile-card-table').forEach((table)=>{
+    const labels=[...table.querySelectorAll('thead th')].map((th)=>th.textContent.trim());
+    table.querySelectorAll('tbody tr').forEach((row)=>{
+      [...row.children].forEach((cell,index)=>{
+        if(!cell.hasAttribute('data-label') && labels[index]) cell.setAttribute('data-label',labels[index]);
+      });
+    });
+  });
+}
+document.addEventListener('DOMContentLoaded',prepareMobileCardTables);
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js').catch(() => {}));
 }
